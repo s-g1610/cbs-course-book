@@ -186,7 +186,13 @@ h1 { font-family: var(--font-display); font-weight: 600; font-size: clamp(30px, 
 .tabcount { display: inline-block; min-width: 18px; margin-left: 4px; padding: 0 5px; border-radius: 9px; background: var(--bg); color: var(--ink); font-size: 11px; font-variant-numeric: tabular-nums; text-align: center; }
 .sync { font-size: 12px; color: var(--muted); }
 .sync.err { color: var(--warn); }
-.io { display: inline-flex; gap: 6px; margin-left: auto; }
+.savebtn { border: 0; border-radius: var(--radius); background: var(--accent); color: var(--surface); padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.savebtn:hover { filter: brightness(1.08); }
+.savebtn:disabled { opacity: .6; cursor: progress; }
+.linkbox { width: 100%; margin: -4px 0 12px; padding: 7px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--ink); font-family: var(--font-mono); font-size: 12px; }
+.restore { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0 0 12px; padding: 10px 14px; border: 1px solid var(--h25); border-radius: var(--radius); background: var(--warn-soft); font-size: 13px; }
+.restore[hidden] { display: none; }
+.io { display: inline-flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
 .iobtn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: var(--radius); padding: 5px 10px; font-size: 12.5px; cursor: pointer; }
 .iobtn:hover { border-color: var(--faint); }
 .layout.listmode { grid-template-columns: minmax(0, 1fr); }
@@ -362,12 +368,19 @@ td.nw { white-space: nowrap; }
           <button type="button" role="tab" id="tab-list" aria-selected="false">My list<span class="tabcount" id="listCount">0</span></button>
           <button type="button" role="tab" id="tab-rev" aria-selected="false">Reviews<span class="tabcount" id="revCount">0</span></button>
         </div>
+        <button type="button" class="savebtn" id="saveBtn">Save my choices</button>
         <span class="sync" id="sync" role="status"></span>
         <span class="io" id="io" hidden>
+          <button type="button" class="iobtn" id="copyLinkBtn">Copy save link</button>
           <button type="button" class="iobtn" id="exportBtn">Export list</button>
           <button type="button" class="iobtn" id="importBtn">Import list</button>
           <input type="file" id="importFile" accept="application/json,.json" hidden>
         </span>
+      </div>
+      <input class="linkbox" id="linkBox" readonly hidden aria-label="Your save link">
+      <div class="restore" id="restore" hidden>
+        <span id="restoreText"></span>
+        <button type="button" class="savebtn" id="restoreBtn">Restore them</button>
       </div>
       <div id="summary" hidden></div>
       <div class="listbar">
@@ -596,7 +609,7 @@ td.nw { white-space: nowrap; }
     sort: document.getElementById('sort'), list: document.getElementById('list'), shown: document.getElementById('shown'),
     active: document.getElementById('activeCount'), seg: document.getElementById('typeSeg'), rail: document.getElementById('rail'),
     summary: document.getElementById('summary'), layout: document.getElementById('layout'), sortwrap: document.getElementById('sortwrap'),
-    sync: document.getElementById('sync'), count: document.getElementById('listCount')
+    sync: document.getElementById('sync'), count: document.getElementById('listCount'), saveBtn: document.getElementById('saveBtn')
   };
   ui.q.addEventListener('input', () => { state.q = ui.q.value.trim().toLowerCase(); render(); });
   ui.div.addEventListener('change', () => { state.div = ui.div.value; render(); });
@@ -938,18 +951,99 @@ td.nw { white-space: nowrap; }
 
   // ---- Saving picks
   function setSync(text, err) { ui.sync.textContent = text; ui.sync.classList.toggle('err', !!err); }
-  function loadLocal() {
+  const toPicks = obj => new Map(Object.entries(obj || {})
+    .map(([id, v]) => [id, typeof v === 'string' ? { tier: v } : v])
+    .filter(([id, p]) => validPick(byId.get(id), p)));
+  const clock = () => new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const countLabel = n => `${n} choice${n === 1 ? '' : 's'}`;
+  function readLocal() {
     try {
       const raw = localStorage.getItem(LOCAL_KEY);
-      if (raw) picks = new Map(Object.entries(JSON.parse(raw))
-        .map(([id, v]) => [id, typeof v === 'string' ? { tier: v } : v])
-        .filter(([id, p]) => validPick(byId.get(id), p)));
-    } catch (e) { /* storage blocked: start empty */ }
+      if (!raw) return null;
+      const o = JSON.parse(raw);
+      return o && o.v === 2 ? { picks: toPicks(o.picks), savedAt: o.savedAt || 0 } : { picks: toPicks(o), savedAt: 0 };
+    } catch (e) { return null; }
   }
   function saveLocal() {
-    try { localStorage.setItem(LOCAL_KEY, JSON.stringify(Object.fromEntries(picks))); }
-    catch (e) { setSync("Couldn't save in this browser.", true); }
+    try { localStorage.setItem(LOCAL_KEY, JSON.stringify({ v: 2, savedAt: Date.now(), picks: Object.fromEntries(picks) })); return true; }
+    catch (e) { setSync("This browser won't keep your choices. Use Copy save link or Export list.", true); return false; }
   }
+  // Save link (standalone site only): the choices ride in the page address, e.g. #list=B8636-F.B6102-P002&saved=1700000000000
+  const CODE = { Favorite: 'F', Great: 'G', Good: 'D', Acceptable: 'A', Completed: 'C' };
+  const DECODE = { F: 'Favorite', G: 'Great', D: 'Good', A: 'Acceptable', C: 'Completed' };
+  const encodeList = () => [...picks].map(([id, p]) => id + '-' + (p.tier === 'Pre-enrolled' ? 'P' + p.section : CODE[p.tier])).join('.');
+  function readHash() {
+    const m = /[#&]list=([A-Za-z0-9.\-]*)/.exec(location.hash);
+    if (!m) return null;
+    const t = /[#&]saved=(\d+)/.exec(location.hash);
+    const out = new Map();
+    m[1].split('.').filter(Boolean).forEach(tok => {
+      const [id, code] = tok.split('-');
+      if (!code) return;
+      const p = code[0] === 'P' ? { tier: 'Pre-enrolled', section: code.slice(1) } : { tier: DECODE[code] };
+      if (validPick(byId.get(id), p)) out.set(id, p);
+    });
+    return { picks: out, savedAt: t ? +t[1] : 0 };
+  }
+  function writeHash() {
+    if (window.claude) return;
+    try { history.replaceState(null, '', location.pathname + location.search + '#list=' + encodeList() + '&saved=' + Date.now()); } catch (e) { /* address bar not writable */ }
+  }
+  function loadLocal() {
+    const a = readLocal(), b = window.claude ? null : readHash();
+    const best = [a, b].filter(x => x && x.picks.size).sort((x, y) => y.savedAt - x.savedAt)[0];
+    if (best) picks = best.picks;
+    if (best && best === b) saveLocal();
+    return best ? (best === b ? 'your save link' : 'this browser') : '';
+  }
+  function bodyFor(c, val) {
+    return Object.assign({ tier: val.tier, title: c.title, type: c.type, credits: c.credits, getItAt: c.cm ? c.cm.need : null, updatedAt: new Date().toISOString() },
+      val.section ? { section: val.section } : {});
+  }
+
+  // Save button: rewrites every choice and keeps a backup copy the page can restore from
+  let saving = false;
+  async function saveAll() {
+    if (saving) return;
+    const entries = [...picks];
+    if (store.mode === 'remote') {
+      if (!store.canWrite) { setSync('View only: you can see this list but not change it.', true); return; }
+      saving = true; ui.saveBtn.disabled = true;
+      try {
+        for (let i = 0; i < entries.length; i++) {
+          const [id, p] = entries[i], ref = store.db.collection('shortlist').doc(id);
+          setSync(`Saving ${i + 1} of ${entries.length}…`);
+          const job = (store.chains.get(id) || Promise.resolve()).catch(() => {}).then(() => ref.set(bodyFor(byId.get(id), p)));
+          store.chains.set(id, job);
+          await job;
+        }
+        await store.db.collection('shortlist').doc('_saved').set({ picks: Object.fromEntries(entries), count: entries.length, savedAt: new Date().toISOString() });
+        setSync(`Saved ${countLabel(entries.length)} to your account at ${clock()}`);
+      } catch (e) {
+        setSync("Couldn't save. Check your connection and press Save again.", true);
+      } finally { saving = false; ui.saveBtn.disabled = false; }
+      return;
+    }
+    if (store.mode === 'error') { setSync("Your saved list can't be reached right now. Reload the page, then press Save.", true); return; }
+    if (saveLocal()) {
+      writeHash();
+      setSync(window.claude
+        ? `Saved ${countLabel(entries.length)} in this browser at ${clock()}`
+        : `Saved ${countLabel(entries.length)} at ${clock()}. The page address now holds your choices; bookmark it or use Copy save link to keep them in any browser.`);
+    }
+  }
+  function showRestore() {
+    const b = store.backup, el = document.getElementById('restore');
+    const show = store.mode === 'remote' && store.canWrite && picks.size === 0 && b && b.count > 0;
+    el.hidden = !show;
+    if (show) document.getElementById('restoreText').textContent =
+      `Your list is empty, but you saved ${countLabel(b.count)} on ${new Date(b.savedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}.`;
+  }
+  document.getElementById('restoreBtn').addEventListener('click', () => {
+    if (!store.backup) return;
+    picks = toPicks(store.backup.picks);
+    showRestore(); render(); saveAll();
+  });
   function savePick(id, val) {
     const c = byId.get(id);
     if (!c || !store.canWrite) return;
@@ -957,12 +1051,15 @@ td.nw { white-space: nowrap; }
     if ((prev && prev.tier) === (val && val.tier) && (prev && prev.section) === (val && val.section)) return;
     if (val) picks.set(id, val); else picks.delete(id);
     render();
-    if (store.mode === 'local') { saveLocal(); return; }
+    if (store.mode === 'local') {
+      if (saveLocal()) { writeHash(); setSync(`${countLabel(picks.size)} kept in this browser · press Save my choices to confirm`); }
+      return;
+    }
     if (store.mode !== 'remote') return;
+    showRestore();
     setSync('Saving…');
     const ref = store.db.collection('shortlist').doc(id);
-    const body = val && Object.assign({ tier: val.tier, title: c.title, type: c.type, credits: c.credits, getItAt: c.cm ? c.cm.need : null, updatedAt: new Date().toISOString() },
-      val.section ? { section: val.section } : {});
+    const body = val && bodyFor(c, val);
     const write = () => val ? ref.set(body) : ref.delete();
     const p = (store.chains.get(id) || Promise.resolve()).catch(() => {}).then(write).then(
       () => { if (store.chains.get(id) === p) setSync('Saved to your account'); },
@@ -1001,18 +1098,37 @@ td.nw { white-space: nowrap; }
       const next = new Map(Object.entries(obj.picks || obj)
         .map(([id, v]) => [id, typeof v === 'string' ? { tier: v } : v])
         .filter(([id, p]) => validPick(byId.get(id), p)));
-      picks = next; saveLocal(); render();
+      picks = next; saveLocal(); writeHash(); render();
       setSync(`Imported ${next.size} course${next.size === 1 ? '' : 's'}`);
     } catch (e) { setSync("That file isn't a course list exported from this page.", true); }
+  });
+
+  ui.saveBtn.addEventListener('click', saveAll);
+  document.getElementById('copyLinkBtn').addEventListener('click', () => {
+    saveLocal(); writeHash();
+    const link = location.href, box = document.getElementById('linkBox');
+    const showBox = () => { box.value = link; box.hidden = false; box.focus(); box.select(); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link).then(
+        () => setSync(`Save link copied with ${countLabel(picks.size)}. Open it in any browser to get them back.`),
+        () => { showBox(); setSync('Copy the save link below.'); });
+    } else { showBox(); setSync('Copy the save link below.'); }
   });
 
   async function connect() {
     let db = null;
     try { db = window.claude && typeof window.claude.use === 'function' ? await window.claude.use('db') : null; } catch (e) { db = null; }
     if (!db) {
-      store.mode = 'local'; loadLocal(); setSync('Saved in this browser only'); render();
-      // Outside Claude (the standalone site) the list lives in this browser, so offer a file to move it between devices
-      if (!window.claude) document.getElementById('io').hidden = false;
+      store.mode = 'local'; const from = loadLocal(); render();
+      if (window.claude) {
+        // Inside Claude but the saved list didn't connect: say so instead of quietly showing an empty list
+        setSync("Your saved list didn't load, so changes now stay only in this browser. Reload the page to reconnect.", true);
+      } else {
+        // The standalone site keeps the list in this browser and in the page address; offer a link and a file to move it
+        document.getElementById('io').hidden = false;
+        if (picks.size) writeHash();
+        setSync(picks.size ? `${countLabel(picks.size)} restored from ${from}` : 'Choices are kept in this browser. Press Save my choices to get a link that works anywhere.');
+      }
       return;
     }
     store.db = db; store.mode = 'remote';
@@ -1024,14 +1140,20 @@ td.nw { white-space: nowrap; }
     let loaded = false;
     const timer = setTimeout(() => { if (!loaded) setSync("Your list can't be reached yet. It will appear once it connects.", true); }, 10000);
     db.collection('shortlist').onSnapshot(snap => {
-      if (!loaded && !snap.metadata.fromCache) { loaded = true; clearTimeout(timer); setSync(store.canWrite ? 'Saved to your account' : 'View only'); }
       const next = new Map();
+      store.backup = null;
       snap.docs.forEach(d => {
         const b = d.exists ? (d.data() || {}) : {};
+        if (d.id === '_saved') { store.backup = b; return; }
         const p = b.section ? { tier: b.tier, section: String(b.section) } : { tier: b.tier };
         if (validPick(byId.get(d.id), p)) next.set(d.id, p);
       });
       picks = next;
+      if (!loaded && !snap.metadata.fromCache) {
+        loaded = true; clearTimeout(timer);
+        setSync(store.canWrite ? `${countLabel(picks.size)} saved to your account` : 'View only');
+      }
+      showRestore();
       render();
     }, () => {
       clearTimeout(timer); loaded = true; store.mode = 'error'; store.canWrite = false;
