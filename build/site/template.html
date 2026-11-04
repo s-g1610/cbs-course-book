@@ -158,6 +158,12 @@ h1 { font-family: var(--font-display); font-weight: 600; font-size: clamp(30px, 
 }
 .tiersel { width: 100%; max-width: 180px; padding: 5px 6px; font-size: 12.5px; border-radius: var(--radius); border: 1px dashed var(--faint); background: var(--surface); color: var(--muted); cursor: pointer; }
 .tiersel:disabled { cursor: not-allowed; opacity: .6; }
+.rankctl { display: flex; align-items: center; gap: 4px; margin-top: 6px; }
+.rk { font-family: var(--font-mono); font-size: 11.5px; font-weight: 500; color: var(--accent); margin-right: auto; white-space: nowrap; }
+.rkbtn { width: 30px; height: 26px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--ink); font-size: 14px; line-height: 1; cursor: pointer; }
+.rkbtn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.rkbtn:disabled { opacity: .3; cursor: default; }
+@media (max-width: 759px) { .rankctl { max-width: 180px; } }
 .tiersel.t-Favorite { background: var(--accent); border: 1px solid var(--accent); color: var(--surface); font-weight: 600; }
 .tiersel.t-Great { background: var(--accent-soft); border: 1px solid var(--accent); color: var(--accent); font-weight: 600; }
 .tiersel.t-Good { background: var(--surface); border: 1px solid var(--accent); color: var(--ink); }
@@ -472,6 +478,10 @@ td.nw { white-space: nowrap; }
   const byId = new Map(DATA.map(c => [c.id, c]));
   const isCore = c => c.type === 'Core';
   const tierOf = id => (picks.get(id) || {}).tier || '';
+  // Order within Favorite, Great and Good: stored rank first, unranked courses after them by course ID
+  const RANKED = ['Favorite', 'Great', 'Good'];
+  const tierOrder = (t, map = picks) => [...map].filter(([, p]) => p.tier === t)
+    .sort((a, b) => (a[1].rank || 1e9) - (b[1].rank || 1e9) || a[0].localeCompare(b[0])).map(([id]) => id);
   const validPick = (c, p) => !!(c && p) && (isCore(c)
     ? p.tier === 'Completed' || (p.tier === 'Pre-enrolled' && c.sections.some(s => s.sec === p.section))
     : TIERS.includes(p.tier));
@@ -789,10 +799,16 @@ td.nw { white-space: nowrap; }
       </select></div>`;
     }
     const t = p.tier || '';
+    let rank = '';
+    if (RANKED.includes(t)) {
+      const order = tierOrder(t), pos = order.indexOf(c.id) + 1;
+      const btn = (dir, label, off) => `<button type="button" class="rkbtn" data-id="${esc(c.id)}" data-dir="${dir}" aria-label="${label} ${esc(c.title)} within ${t}"${off || !store.canWrite ? ' disabled' : ''}>${dir < 0 ? '↑' : '↓'}</button>`;
+      rank = `<div class="rankctl"><span class="rk" title="Rank within ${t}">${t} #${pos}</span>${view === 'list' ? btn(-1, 'Move up', pos === 1) + btn(1, 'Move down', pos === order.length) : ''}</div>`;
+    }
     return `<div class="pick"><select class="tiersel${t ? ' t-' + t : ''}" data-id="${esc(c.id)}" aria-label="My tier for ${esc(c.title)}"${dis}>
       <option value="">${t ? 'Remove from list' : 'Add to list…'}</option>
       ${TIERS.map(x => `<option value="${x}"${x === t ? ' selected' : ''}>${x}</option>`).join('')}
-    </select></div>`;
+    </select>${rank}</div>`;
   }
 
   function rowHtml(c, clashes, cores, withReviews) {
@@ -892,8 +908,9 @@ td.nw { white-space: nowrap; }
       const done = coreCourses.filter(c => tierOf(c.id) === 'Completed');
       const coreHead = `<div class="tier-h"><b>Core</b><span>${pre.length} pre-enrolled this spring · ${roundCr(pre)} credits · ${done.length} completed or exempt</span></div>`;
       ui.list.innerHTML = coreHead + coreCourses.map(c => rowHtml(c, null, cores)).join('') + TIERS.map(t => {
-        const cs = listed.filter(c => tierOf(c.id) === t);
-        return `<div class="tier-h"><b>${t}</b><span>${cs.length} course${cs.length === 1 ? '' : 's'} · ${roundCr(cs)} credits</span></div>`
+        const cs = RANKED.includes(t) ? tierOrder(t).map(id => byId.get(id)) : listed.filter(c => tierOf(c.id) === t);
+        const hint = RANKED.includes(t) && cs.length > 1 ? ' · ranked #1 first, reorder with the arrows' : '';
+        return `<div class="tier-h"><b>${t}</b><span>${cs.length} course${cs.length === 1 ? '' : 's'} · ${roundCr(cs)} credits${hint}</span></div>`
           + (cs.length ? cs.map(c => rowHtml(c, clashes.get(c.id), cores)).join('') : '<div class="tier-empty">None yet.</div>');
       }).join('');
       ui.shown.innerHTML = `<b>${listed.length}</b> elective${listed.length === 1 ? '' : 's'} on your list · filters don't apply here`;
@@ -909,6 +926,8 @@ td.nw { white-space: nowrap; }
     ui.active.textContent = n ? `${n} active` : '';
   }
   ui.list.addEventListener('click', e => {
+    const rb = e.target.closest('.rkbtn');
+    if (rb) { moveRank(rb.dataset.id, +rb.dataset.dir); return; }
     const btn = e.target.closest('.row-btn'); if (!btn) return;
     const art = btn.closest('.course'), id = art.dataset.id;
     const c = DATA.find(x => x.id === id);
@@ -965,17 +984,21 @@ td.nw { white-space: nowrap; }
   // Save link (standalone site only): the choices ride in the page address, e.g. #list=B8636-F.B6102-P002&saved=1700000000000
   const CODE = { Favorite: 'F', Great: 'G', Good: 'D', Acceptable: 'A', Completed: 'C' };
   const DECODE = { F: 'Favorite', G: 'Great', D: 'Good', A: 'Acceptable', C: 'Completed' };
-  const encodeList = () => [...picks].map(([id, p]) => id + '-' + (p.tier === 'Pre-enrolled' ? 'P' + p.section : CODE[p.tier])).join('.');
+  // Entries are written in rank order, so the order inside a tier carries the ranking
+  const encodeList = () => [...RANKED.flatMap(t => tierOrder(t)), ...[...picks.keys()].filter(id => !RANKED.includes(tierOf(id)))]
+    .map(id => { const p = picks.get(id); return id + '-' + (p.tier === 'Pre-enrolled' ? 'P' + p.section : CODE[p.tier]); }).join('.');
   function readHash() {
     const m = /[#&]list=([A-Za-z0-9.\-]*)/.exec(location.hash);
     if (!m) return null;
     const t = /[#&]saved=(\d+)/.exec(location.hash);
-    const out = new Map();
+    const out = new Map(), seen = {};
     m[1].split('.').filter(Boolean).forEach(tok => {
       const [id, code] = tok.split('-');
       if (!code) return;
       const p = code[0] === 'P' ? { tier: 'Pre-enrolled', section: code.slice(1) } : { tier: DECODE[code] };
-      if (validPick(byId.get(id), p)) out.set(id, p);
+      if (!validPick(byId.get(id), p)) return;
+      if (RANKED.includes(p.tier)) p.rank = seen[p.tier] = (seen[p.tier] || 0) + 1;
+      out.set(id, p);
     });
     return { picks: out, savedAt: t ? +t[1] : 0 };
   }
@@ -988,7 +1011,7 @@ td.nw { white-space: nowrap; }
   const samePicks = (a, b) => a.size === b.size && [...a].every(([id, p]) => {
     const q = b.get(id);
     return q && q.tier === p.tier && (q.section || '') === (p.section || '');
-  });
+  }) && RANKED.every(t => tierOrder(t, a).join() === tierOrder(t, b).join());
   function loadLocal() {
     const a = readLocal(), b = window.claude ? null : readHash();
     if (a && a.picks.size) picks = a.picks;
@@ -1021,7 +1044,7 @@ td.nw { white-space: nowrap; }
   });
   function bodyFor(c, val) {
     return Object.assign({ tier: val.tier, title: c.title, type: c.type, credits: c.credits, getItAt: c.cm ? c.cm.need : null, updatedAt: new Date().toISOString() },
-      val.section ? { section: val.section } : {});
+      val.section ? { section: val.section } : {}, val.rank ? { rank: val.rank } : {});
   }
 
   // Save button: rewrites every choice and keeps a backup copy the page can restore from
@@ -1067,13 +1090,8 @@ td.nw { white-space: nowrap; }
     picks = toPicks(store.backup.picks);
     showRestore(); render(); saveAll();
   });
-  function savePick(id, val) {
-    const c = byId.get(id);
-    if (!c || !store.canWrite) return;
-    const prev = picks.get(id) || null;
-    if ((prev && prev.tier) === (val && val.tier) && (prev && prev.section) === (val && val.section)) return;
-    if (val) picks.set(id, val); else picks.delete(id);
-    render();
+  // Write the current state of these courses: one write at a time per document, chained
+  function persist(ids, onFail) {
     if (store.mode === 'local') {
       if (saveLocal()) { writeHash(); setSync(`${countLabel(picks.size)} kept in this browser · press Save my choices to confirm`); }
       return;
@@ -1081,18 +1099,47 @@ td.nw { white-space: nowrap; }
     if (store.mode !== 'remote') return;
     showRestore();
     setSync('Saving…');
-    const ref = store.db.collection('shortlist').doc(id);
-    const body = val && bodyFor(c, val);
-    const write = () => val ? ref.set(body) : ref.delete();
-    const p = (store.chains.get(id) || Promise.resolve()).catch(() => {}).then(write).then(
-      () => { if (store.chains.get(id) === p) setSync('Saved to your account'); },
-      e => {
-        if (prev) picks.set(id, prev); else picks.delete(id);
-        if (e && e.code === 'invalid_argument') { store.canWrite = false; setSync('View only: you can see this list but not change it.', true); }
-        else setSync("Couldn't save that change. Try again.", true);
-        render();
-      });
-    store.chains.set(id, p);
+    ids.forEach(id => {
+      const val = picks.get(id) || null, ref = store.db.collection('shortlist').doc(id);
+      const body = val && bodyFor(byId.get(id), val);
+      const write = () => val ? ref.set(body) : ref.delete();
+      const p = (store.chains.get(id) || Promise.resolve()).catch(() => {}).then(write).then(
+        () => { if (store.chains.get(id) === p) setSync('Saved to your account'); },
+        e => {
+          if (onFail) onFail(e);
+          if (e && e.code === 'invalid_argument') { store.canWrite = false; setSync('View only: you can see this list but not change it.', true); }
+          else setSync("Couldn't save that change. Try again.", true);
+          render();
+        });
+      store.chains.set(id, p);
+    });
+  }
+  function savePick(id, val) {
+    const c = byId.get(id);
+    if (!c || !store.canWrite) return;
+    const prev = picks.get(id) || null;
+    if ((prev && prev.tier) === (val && val.tier) && (prev && prev.section) === (val && val.section)) return;
+    // A course moved into a ranked tier goes to the bottom of it
+    if (val && RANKED.includes(val.tier)) val = Object.assign({}, val, { rank: tierOrder(val.tier).length + 1 });
+    if (val) picks.set(id, val); else picks.delete(id);
+    render();
+    persist([id], () => { if (prev) picks.set(id, prev); else picks.delete(id); });
+  }
+  function moveRank(id, dir) {
+    const t = tierOf(id);
+    if (!store.canWrite || !RANKED.includes(t)) return;
+    const order = tierOrder(t), i = order.indexOf(id), j = i + dir;
+    if (j < 0 || j >= order.length) return;
+    [order[i], order[j]] = [order[j], order[i]];
+    const changed = [];
+    order.forEach((cid, k) => {
+      const p = picks.get(cid);
+      if (p.rank !== k + 1) { picks.set(cid, Object.assign({}, p, { rank: k + 1 })); changed.push(cid); }
+    });
+    render();
+    const again = ui.list.querySelector(`.rkbtn[data-id="${id}"][data-dir="${dir}"]:not(:disabled)`) || ui.list.querySelector(`.rkbtn[data-id="${id}"]:not(:disabled)`);
+    if (again) again.focus();
+    persist(changed);
   }
   ui.list.addEventListener('change', e => {
     const s = e.target.closest('.tiersel');
@@ -1170,6 +1217,7 @@ td.nw { white-space: nowrap; }
         const b = d.exists ? (d.data() || {}) : {};
         if (d.id === '_saved') { store.backup = b; return; }
         const p = b.section ? { tier: b.tier, section: String(b.section) } : { tier: b.tier };
+        if (typeof b.rank === 'number') p.rank = b.rank;
         if (validPick(byId.get(d.id), p)) next.set(d.id, p);
       });
       picks = next;
