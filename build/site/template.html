@@ -111,8 +111,28 @@ h1 { font-family: var(--font-display); font-weight: 600; font-size: clamp(30px, 
   .cols, .row-btn { grid-template-columns: 64px minmax(0, 1.5fr) minmax(0, 1.25fr) minmax(0, 1fr) 30px; }
 }
 @media (min-width: 1180px) {
-  .cols, .row-btn { grid-template-columns: 64px minmax(0, 1.5fr) minmax(0, 1.2fr) minmax(0, 1fr) 30px 46px 108px; }
+  .cols, .row-btn { grid-template-columns: 64px minmax(0, 1.5fr) minmax(0, 1.2fr) minmax(0, 1fr) 30px 104px 108px; }
 }
+.c-rev { display: none; font-size: 12px; }
+@media (min-width: 1180px) { .c-rev { display: block; } }
+.c-rev .more { display: block; margin-top: 3px; }
+.rv-list { display: grid; gap: 12px; padding: 2px 14px 18px; }
+@media (min-width: 760px) { .rv-list { padding-left: 92px; } }
+.reviews { display: grid; gap: 12px; }
+.rv { border-left: 3px solid var(--line); padding: 2px 0 2px 12px; display: grid; gap: 4px; max-width: 82ch; }
+.rv.v-b90 { border-left-color: var(--h90); } .rv.v-b70 { border-left-color: var(--h70); } .rv.v-b50 { border-left-color: var(--h50); }
+.rv.v-b25 { border-left-color: var(--h25); } .rv.v-b0 { border-left-color: var(--h0); }
+.rv-head { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; font-size: 12.5px; }
+.rv-prof { font-weight: 600; }
+.rv-src { color: var(--faint); font-size: 11.5px; }
+.rv-text { margin: 0; white-space: pre-line; font-size: 13.5px; line-height: 1.55; }
+.rv-ok { margin: 0; font-size: 12px; color: var(--good); }
+.rv-warn { margin: 0; font-size: 12px; font-weight: 500; color: var(--warn); }
+.rv-note { margin: 0; font-size: 11.5px; color: var(--muted); }
+.other-card { padding: 12px 14px 4px; display: grid; gap: 4px; }
+.other-card + .other-card, .tier-h + .other-card { border-top: 1px solid var(--line); }
+.other-card .ctitle { font-size: 15px; }
+.other-card .rv-list { padding-left: 0; }
 .cols { padding: 9px 14px; border-bottom: 1px solid var(--line); font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
 .cols > span:nth-child(n+3) { display: none; }
 @media (min-width: 760px) { .cols > span:nth-child(-n+5) { display: block; } }
@@ -285,7 +305,7 @@ td.nw { white-space: nowrap; }
 
   <div class="pending-note">
     <span class="flag tba tag">Next</span>
-    <p><strong>Pick a tier in the "My tier" column to build your list, and set your core status in My list.</strong> "Get it at" is the lowest tier at which at least 70% of students got a seat last spring, adjusted for section counts that changed this year. My list checks the 18-credit cap, clashes with your pre-enrolled core, prerequisites and corequisites, and courses ranked below the tier they needed. Ratings wait on the course evaluations.</p>
+    <p><strong>Pick a tier in the "My tier" column to build your list, and set your core status in My list.</strong> "Get it at" is the lowest tier at which at least 70% of students got a seat last spring, adjusted for section counts that changed this year. My list checks the 18-credit cap, clashes with your pre-enrolled core, prerequisites and corequisites, and courses ranked below the tier they needed. The Reviews tab has every student comment from the review sheet and recommendation thread, and flags when the reviewed professor isn't teaching the course this spring.</p>
     <p>Courses and sections pulled from the public CBS course directory on __PULLED__. Check the official listing before you bid; sections and instructors can still change.</p>
   </div>
 
@@ -328,6 +348,7 @@ td.nw { white-space: nowrap; }
         <div class="tabs" role="tablist" aria-label="View">
           <button type="button" role="tab" id="tab-all" aria-selected="true">All courses</button>
           <button type="button" role="tab" id="tab-list" aria-selected="false">My list<span class="tabcount" id="listCount">0</span></button>
+          <button type="button" role="tab" id="tab-rev" aria-selected="false">Reviews<span class="tabcount" id="revCount">0</span></button>
         </div>
         <span class="sync" id="sync" role="status"></span>
         <span class="io" id="io" hidden>
@@ -344,6 +365,7 @@ td.nw { white-space: nowrap; }
             <option value="id">Course ID</option>
             <option value="title">Title A–Z</option>
             <option value="div">Division</option>
+            <option value="rev">Best reviewed</option>
             <option value="hard">Hardest to get</option>
             <option value="ranked">Most ranked last spring</option>
             <option value="secs">Most sections</option>
@@ -356,7 +378,7 @@ td.nw { white-space: nowrap; }
         <div class="cols-wrap" aria-hidden="true">
           <div class="cols">
             <span>ID</span><span>Course</span><span>Spring 2027 sections</span><span>Professors</span><span style="text-align:right">Cr</span>
-            <span class="pend" style="text-align:center">Rating</span><span>Get it at</span>
+            <span>Reviews</span><span>Get it at</span>
           </div>
           <span class="pick-h">My tier</span>
         </div>
@@ -370,15 +392,47 @@ td.nw { white-space: nowrap; }
 </div>
 
 <script type="application/json" id="course-data">__DATA__</script>
+<script type="application/json" id="review-extra">__EXTRA__</script>
 <script>
 (function () {
   const DATA = JSON.parse(document.getElementById('course-data').textContent);
+  const EXTRA = JSON.parse(document.getElementById('review-extra').textContent); // reviewed courses MBAs can't bid on this spring
+
+  // ---- Student reviews: verdict scale from the review sheet; thread comments carry no verdict
+  const VERDICT = { 'Strong Yes': [2, 'b90'], 'Yes': [1, 'b70'], 'Maybe': [0, 'b50'], 'Probably No': [-1, 'b25'], 'No': [-2, 'b0'] };
+  const SRC = { sheet: 'Review sheet', thread: 'Recommendation thread' };
+  function reviewSummary(c) {
+    const rs = c.reviews || [], scored = rs.filter(r => VERDICT[r.verdict]);
+    if (!rs.length) return null;
+    if (!scored.length) return { n: rs.length, label: '', cls: 'bna', score: -9 };
+    const avg = scored.reduce((n, r) => n + VERDICT[r.verdict][0], 0) / scored.length;
+    const label = avg >= 1.5 ? 'Strong Yes' : avg >= .75 ? 'Yes' : avg >= -.25 ? 'Maybe' : avg >= -1.25 ? 'Probably No' : 'No';
+    return { n: rs.length, nv: scored.length, label, cls: VERDICT[label][1], score: avg };
+  }
+  function reviewChip(c) {
+    const s = reviewSummary(c);
+    if (!s) return '<span class="more">—</span>';
+    const cnt = `${s.n} ${s.n === 1 ? 'review' : 'reviews'}`;
+    return s.label ? `<span class="need ${s.cls}" title="Average of ${s.nv} sheet verdict${s.nv > 1 ? 's' : ''}">${s.label}</span><span class="more">${cnt}</span>` : `<span class="need bna">${s.n} comment${s.n > 1 ? 's' : ''}</span>`;
+  }
+  function reviewItem(r) {
+    const v = VERDICT[r.verdict];
+    const head = `${v ? `<span class="need ${v[1]}">${esc(r.verdict)}</span>` : '<span class="need bna">Comment</span>'}${r.prof ? `<span class="rv-prof">${esc(r.prof)}</span>` : ''}<span class="rv-src">${SRC[r.src] || ''}</span>`;
+    let match = '';
+    if (r.match) match = r.match.length
+      ? `<p class="rv-ok">Teaching it this spring: ${esc(r.match.join(', '))}</p>`
+      : `<p class="rv-warn">Not listed for this course in Spring 2027${r.profs27 && r.profs27.length ? ' (listed: ' + esc(r.profs27.join(', ')) + ')' : ''}</p>`;
+    return `<div class="rv ${v ? 'v-' + v[1] : ''}"><div class="rv-head">${head}</div>${match}
+      ${r.text ? `<p class="rv-text">${esc(r.text)}</p>` : '<p class="rv-note">Verdict only, no comment written.</p>'}
+      ${r.truncated ? '<p class="rv-note">The end of this comment was cut off in the screenshot.</p>' : ''}
+      ${r.multi ? `<p class="rv-note">Comment covers: ${esc(r.course)}</p>` : ''}</div>`;
+  }
   const PAST_TERMS = ['Fall 2022','Spring 2023','Summer 2023','Fall 2023','Spring 2024','Summer 2024','Fall 2024','Spring 2025','Summer 2025','Fall 2025','Spring 2026','Summer 2026','Fall 2026'];
   const DAY = { Monday: 'M', Tuesday: 'T', Wednesday: 'W', Thursday: 'R', Friday: 'F', Saturday: 'S', Sunday: 'U' };
   const DAY_NAMES = { M: 'Mon', T: 'Tue', W: 'Wed', R: 'Thu', F: 'Fri', S: 'Sat' };
   const PARTS = ['Full Term', 'A Term', 'B Term', 'Block Week', 'LEAD'];
   const TODS = ['Morning', 'Afternoon', 'Evening', 'TBA'];
-  const FLAGS = [['new', 'New course'], ['chg', 'Professor change'], ['nosp', 'Not offered Spring 2026'], ['tba', 'Professor TBA'], ['app', 'Application only'], ['req', 'Has prereq or coreq'], ['fits', 'Fits my core schedule']];
+  const FLAGS = [['new', 'New course'], ['chg', 'Professor change'], ['nosp', 'Not offered Spring 2026'], ['tba', 'Professor TBA'], ['app', 'Application only'], ['req', 'Has prereq or coreq'], ['fits', 'Fits my core schedule'], ['rev', 'Has student reviews']];
   const NEEDS = ['Acceptable', 'Good', 'Great', 'Favorite', 'Favorite, risky', 'Long shot'];
   const NEED_BAND = { 'Acceptable': 'b90', 'Good': 'b90', 'Great': 'b70', 'Favorite': 'b50', 'Favorite, risky': 'b25', 'Long shot': 'b0' };
   const band = p => p == null ? 'bna' : p >= .9 ? 'b90' : p >= .7 ? 'b70' : p >= .5 ? 'b50' : p >= .25 ? 'b25' : 'b0';
@@ -565,6 +619,7 @@ td.nw { white-space: nowrap; }
     if (state.need.size && !state.need.has(needKey(c))) return false;
     for (const f of state.flag) {
       if (f === 'req' && !c.reqs.length) return false;
+      if (f === 'rev' && !(c.reviews || []).length) return false;
       if (f === 'fits' && (isCore(c) || (curCores.length && !usableSecs(c, curCores).length))) return false;
       if (f === 'new' && !c.newCourse) return false;
       if (f === 'chg' && !c.profChange) return false;
@@ -578,6 +633,8 @@ td.nw { white-space: nowrap; }
     id: (a, b) => a.id.localeCompare(b.id),
     title: (a, b) => a.title.localeCompare(b.title),
     div: (a, b) => a.division.localeCompare(b.division) || a.id.localeCompare(b.id),
+    rev: (a, b) => { const sa = reviewSummary(a), sb = reviewSummary(b);
+      return (sb ? sb.score : -99) - (sa ? sa.score : -99) || (sb ? sb.n : 0) - (sa ? sa.n : 0) || a.id.localeCompare(b.id); },
     hard: (a, b) => hardness(b) - hardness(a) || a.id.localeCompare(b.id),
     ranked: (a, b) => (b.cm ? b.cm.ranked : -1) - (a.cm ? a.cm.ranked : -1) || a.id.localeCompare(b.id),
     secs: (a, b) => b.sections.length - a.sections.length || a.id.localeCompare(b.id),
@@ -627,7 +684,8 @@ td.nw { white-space: nowrap; }
 
   function cmCard(c) {
     const m = c.cm, title = '<h4 class="h3" style="margin:0">Spring 2026 Course Match</h4>';
-    const pending = `<dt>Past rating</dt><dd>Pending evaluations</dd><dt>${isCore(c) ? 'My status' : 'My tier'}</dt><dd>${esc(tierLabel(c.id) || (isCore(c) ? 'Not set' : 'Not on my list'))}</dd>`;
+    const rsum = reviewSummary(c);
+    const pending = `<dt>Reviews</dt><dd>${rsum ? (rsum.label ? `${rsum.label} on average, ${rsum.n} review${rsum.n > 1 ? 's' : ''}` : `${rsum.n} comment${rsum.n > 1 ? 's' : ''}`) : 'None shared'}</dd><dt>${isCore(c) ? 'My status' : 'My tier'}</dt><dd>${esc(tierLabel(c.id) || (isCore(c) ? 'Not set' : 'Not on my list'))}</dd>`;
     if (!m) return `<div class="model">${title}<p>${esc(c.cmWhy)}</p><dl>${pending}</dl></div>`;
     const pc = p => p == null ? 'n/a' : Math.round(p * 100) + '%';
     const cells = [['Favorite', m.fav], ['Great', m.great], ['Good', m.good], ['Accept.', m.acc]]
@@ -667,6 +725,7 @@ td.nw { white-space: nowrap; }
     const firstNote = c.sections.some(s => /first class is mandatory/i.test(s.notes || ''));
     return `<div class="detail">
       ${c.intro ? `<p class="intro">${esc(c.intro)}</p>` : ''}
+      ${(c.reviews || []).length && view !== 'reviews' ? `<div class="reviews"><h4 class="h3" style="margin:0">Student reviews (${c.reviews.length})</h4>${c.reviews.map(reviewItem).join('')}</div>` : ''}
       <div class="dgrid">
         <div class="dmain">
           <div>
@@ -717,7 +776,7 @@ td.nw { white-space: nowrap; }
     </select></div>`;
   }
 
-  function rowHtml(c, clashes, cores) {
+  function rowHtml(c, clashes, cores, withReviews) {
     const isOpen = open.has(c.id);
     const notes = pickNotes(c, clashes, cores || []);
     const noteHtml = notes.warn.map(w => `<span class="warn-line">${esc(w)}</span>`).join('') + notes.hint.map(h => `<span class="hint-line">${esc(h)}</span>`).join('');
@@ -725,15 +784,16 @@ td.nw { white-space: nowrap; }
       <div class="head">
       <button type="button" class="row-btn" aria-expanded="${isOpen}">
         <span class="cid">${esc(c.id)}</span>
-        <span class="ctitle">${esc(c.title)}<span class="csub">${esc(c.division)} · ${c.sections.length} section${c.sections.length > 1 ? 's' : ''}<span class="c-cr-m"> · ${c.credits} cr</span></span>${flagsHtml(c)}${c.type === 'Elective' ? `<span class="need-m">Get it at ${needChip(c)}</span>` : ''}${noteHtml}</span>
+        <span class="ctitle">${esc(c.title)}<span class="csub">${esc(c.division)} · ${c.sections.length} section${c.sections.length > 1 ? 's' : ''}<span class="c-cr-m"> · ${c.credits} cr</span></span>${flagsHtml(c)}${c.type === 'Elective' ? `<span class="need-m">Get it at ${needChip(c)}${(c.reviews || []).length ? ` · Reviews ${reviewChip(c).replace('class="more"', 'class="more" style="display:inline"')}` : ''}</span>` : ''}${noteHtml}</span>
         <span class="c-when">${whenHtml(c, 3)}</span>
         <span class="c-prof">${profHtml(c)}</span>
         <span class="c-cr">${c.credits}</span>
-        <span class="c-pend">—</span><span class="c-need">${needChip(c)}</span>
+        <span class="c-rev">${reviewChip(c)}</span><span class="c-need">${needChip(c)}</span>
         <span class="c-when-m">${whenHtml(c, 2)}<br>${profHtml(c)}</span>
       </button>
       ${pickHtml(c)}
       </div>
+      ${withReviews && (c.reviews || []).length ? `<div class="rv-list">${c.reviews.map(reviewItem).join('')}</div>` : ''}
       ${isOpen ? detailHtml(c) : ''}
     </article>`;
   }
@@ -792,7 +852,20 @@ td.nw { white-space: nowrap; }
     const clashes = clashMap(listedIds, cores);
     ui.count.textContent = listedIds.length;
     const roundCr = cs => Math.round(cs.reduce((n, c) => n + c.credits, 0) * 10) / 10;
-    if (view === 'list') {
+    if (view === 'reviews') {
+      const reviewed = DATA.filter(c => (c.reviews || []).length).sort(sorters.rev);
+      const nOffered = reviewed.reduce((n, c) => n + c.reviews.length, 0);
+      const otherHtml = EXTRA.map(o => `<div class="other-card">
+          <span class="ctitle">${esc(o.title)} <span class="cid">${esc(o.id)}</span></span>
+          <span class="rv-warn">${esc(o.note)}</span>
+          ${o.profs ? `<span class="csub">Taught before by ${esc(o.profs)}</span>` : ''}
+          <div class="rv-list">${o.reviews.map(reviewItem).join('')}</div>
+        </div>`).join('');
+      ui.list.innerHTML = `<div class="tier-h"><b>Offered in Spring 2027</b><span>${reviewed.length} courses · ${nOffered} reviews and comments · best reviewed first</span></div>`
+        + reviewed.map(c => rowHtml(c, clashes.get(c.id), cores, true)).join('')
+        + `<div class="tier-h"><b>Not open to MBAs in Course Match this spring</b><span>${EXTRA.length} courses</span></div>` + otherHtml;
+      ui.shown.innerHTML = `Every comment from the review sheet and recommendation thread · a comment that names several courses appears under each · filters don't apply here`;
+    } else if (view === 'list') {
       const listed = listedIds.map(id => byId.get(id)).sort((a, b) => a.id.localeCompare(b.id));
       ui.summary.innerHTML = summaryHtml(listed, clashes, cores);
       const coreCourses = DATA.filter(isCore);
@@ -839,14 +912,17 @@ td.nw { white-space: nowrap; }
     view = v;
     document.getElementById('tab-all').setAttribute('aria-selected', v === 'all');
     document.getElementById('tab-list').setAttribute('aria-selected', v === 'list');
-    ui.layout.classList.toggle('listmode', v === 'list');
-    ui.rail.hidden = v === 'list';
+    document.getElementById('tab-rev').setAttribute('aria-selected', v === 'reviews');
+    ui.layout.classList.toggle('listmode', v !== 'all');
+    ui.rail.hidden = v !== 'all';
     ui.summary.hidden = v !== 'list';
-    ui.sortwrap.hidden = v === 'list';
+    ui.sortwrap.hidden = v !== 'all';
     render();
   }
   document.getElementById('tab-all').addEventListener('click', () => setView('all'));
   document.getElementById('tab-list').addEventListener('click', () => setView('list'));
+  document.getElementById('tab-rev').addEventListener('click', () => setView('reviews'));
+  document.getElementById('revCount').textContent = DATA.filter(c => (c.reviews || []).length).length + EXTRA.length;
 
   // ---- Saving picks
   function setSync(text, err) { ui.sync.textContent = text; ui.sync.classList.toggle('err', !!err); }

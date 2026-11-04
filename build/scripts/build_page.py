@@ -76,6 +76,45 @@ def structured_reqs(cid):
     return out
 for c in cs:
     c['rq'] = structured_reqs(c['id'])
+
+# ---- Student reviews (review sheet + recommendation thread), joined by course id
+rv = json.load(open(os.path.join(S, 'reviews.json')))['reviews']
+ccd = json.load(open(os.path.join(S, 'ccd.json')))
+terms = ccd['filters']['semester_filter']
+byid = {c['id']: c for c in cs}
+def name_tokens(name):
+    return [x for x in re.split(r'[^a-z]+', name.lower()) if len(x) >= 4]
+for c in cs:
+    c['reviews'] = []
+other = {}
+for r in rv:
+    for cid in r['ids']:
+        e = {k: r.get(k, '') for k in ('course', 'prof', 'verdict', 'text', 'src')}
+        e['truncated'] = bool(r.get('truncated'))
+        e['multi'] = len(r['ids']) > 1
+        c = byid.get(cid)
+        if c:
+            profs27 = sorted({p for s in c['sections'] for p in s['profs'] if p != 'New Adjunct'})
+            if r.get('prof'):
+                pl = r['prof'].lower()
+                e['match'] = [p for p in profs27 if any(x in pl for x in name_tokens(p))]
+                e['profs27'] = profs27
+            c['reviews'].append(e)
+        else:
+            other.setdefault(cid, []).append(e)
+extra = []
+for cid, revs in sorted(other.items()):
+    rows = [x for x in ccd['courses'].values() if x['course_true_id'] == cid]
+    sems = sorted({s for x in rows for s in x['semester_filter']})
+    progs = sorted({x['degree_program'] for x in rows})
+    title = rows[0]['plain_title'].strip() if rows else cid
+    if '20271' in sems:
+        note = 'Offered in Spring 2027 as an MS/PhD course, so it is not in Course Match for MBAs. The comment suggests asking about Add/Drop or a waiver.'
+    else:
+        note = 'Not offered in Spring 2027. Last offered ' + (terms.get(sems[-1], sems[-1]) if sems else 'unknown') + '.'
+    extra.append({'id': cid, 'title': title, 'programs': progs, 'note': note,
+                  'profs': rows[0]['professors'] if rows else '', 'reviews': revs})
+print('reviews on offered courses:', sum(len(c['reviews']) for c in cs), 'courses:', sum(1 for c in cs if c['reviews']), '| other courses:', len(extra))
 el = [c for c in cs if c['type'] == 'Elective']
 print(collections.Counter(c['cm']['need'] if c['cm'] else 'none' for c in el))
 print('adjusted:', [(c['id'], c['title'][:30], c['cm']['base'], '->', c['cm']['need']) for c in el if c['cm'] and c['cm']['adj']])
@@ -83,7 +122,7 @@ print('filled26', sum(1 for c in el if c['cm'] and c['cm']['filled']))
 json.dump(cs, open(os.path.join(S, 'courses_s27_model.json'), 'w'), ensure_ascii=False)
 data = json.dumps(cs, ensure_ascii=False, separators=(',', ':')).replace('</', '<\\/')
 t = open(os.path.join(S, 'site', 'template.html'), encoding='utf-8').read()
-t = t.replace('__DATA__', data).replace('__PULLED__', 'November 2, 2026')
+t = t.replace('__DATA__', data).replace('__EXTRA__', json.dumps(extra, ensure_ascii=False, separators=(',', ':')).replace('</', '<\\/')).replace('__PULLED__', 'November 2, 2026')
 open(os.path.join(S, 'site', 'spring-2027-course-book.html'), 'w', encoding='utf-8').write(t)
 js = t[t.rfind('<script>') + 8:t.rfind('</script>')]
 open(os.path.join(S, 'site', '_check.js'), 'w').write(js)
