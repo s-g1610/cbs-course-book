@@ -1,0 +1,6 @@
+.DS_Store
+build/pages/
+build/input/
+build/site/_check.js
+build/site/spring-2027-course-book.html
+build/site/preview.html

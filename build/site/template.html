@@ -1,0 +1,959 @@
+<title>Spring 2027 Course Book</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: registrar's bulletin. Sticky filter rail on the left, a dense course ledger on the right; each row opens into a section sheet. */
+:root {
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --ink: #142032;
+  --muted: #5b6678;
+  --faint: #8792a3;
+  --line: #dde2ea;
+  --accent: #1d5aa6;
+  --accent-soft: #e5edf8;
+  --full: #34507a;   --full-soft: #e6ebf3;
+  --aterm: #0d7470;  --aterm-soft: #e0f1ef;
+  --bterm: #a35a12;  --bterm-soft: #f8ecdd;
+  --block: #7b4693;  --block-soft: #f1e7f5;
+  --good: #2c7a4b;   --good-soft: #e3f2e8;
+  --warn: #b0432c;   --warn-soft: #f9e6e1;
+  /* heatmap bands, same cut-offs as the Course Match sheet */
+  --h90: #1f7a47; --h90-fg: #ffffff;
+  --h70: #a9dcb6; --h70-fg: #0f3d22;
+  --h50: #f5df8c; --h50-fg: #4a3b00;
+  --h25: #f4b67b; --h25-fg: #5a2a00;
+  --h0:  #ec8f83; --h0-fg:  #5c130b;
+  --hna: #e4e7ec; --hna-fg: #5b6678;
+  --font-display: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --font-body: "Public Sans", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --radius: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e131a; --surface: #151c26; --ink: #e3e8ef; --muted: #9aa6b8; --faint: #6f7b8e; --line: #263141;
+    --accent: #82b2ee; --accent-soft: #1a2a40;
+    --full: #9db3d6; --full-soft: #1e2a3c; --aterm: #5fc7bf; --aterm-soft: #12302e;
+    --bterm: #e3a160; --bterm-soft: #33251a; --block: #c79be0; --block-soft: #2c2135;
+    --good: #6fcf97; --good-soft: #163024; --warn: #f08f78; --warn-soft: #3a211b;
+    --h90: #2b8a55; --h90-fg: #ffffff; --h70: #35644a; --h70-fg: #d9f2e0; --h50: #6b5a1c; --h50-fg: #f7e7a6;
+    --h25: #77441f; --h25-fg: #ffd8b5; --h0: #7d2b22; --h0-fg: #ffd2cb; --hna: #263141; --hna-fg: #9aa6b8;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e131a; --surface: #151c26; --ink: #e3e8ef; --muted: #9aa6b8; --faint: #6f7b8e; --line: #263141;
+  --accent: #82b2ee; --accent-soft: #1a2a40;
+  --full: #9db3d6; --full-soft: #1e2a3c; --aterm: #5fc7bf; --aterm-soft: #12302e;
+  --bterm: #e3a160; --bterm-soft: #33251a; --block: #c79be0; --block-soft: #2c2135;
+  --good: #6fcf97; --good-soft: #163024; --warn: #f08f78; --warn-soft: #3a211b;
+  --h90: #2b8a55; --h90-fg: #ffffff; --h70: #35644a; --h70-fg: #d9f2e0; --h50: #6b5a1c; --h50-fg: #f7e7a6;
+  --h25: #77441f; --h25-fg: #ffd8b5; --h0: #7d2b22; --h0-fg: #ffd2cb; --hna: #263141; --hna-fg: #9aa6b8;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 14px; line-height: 1.5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+a { color: var(--accent); }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+.wrap { max-width: 1280px; margin: 0 auto; padding-block: 28px 72px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+.masthead { display: grid; gap: 10px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
+.eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: clamp(30px, 4vw, 42px); line-height: 1.05; margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+.lede { margin: 0; color: var(--muted); max-width: 70ch; }
+.stats { display: flex; flex-wrap: wrap; gap: 6px 22px; margin-top: 6px; font-size: 13px; color: var(--muted); }
+.stats b { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 600; }
+
+.pending-note { margin-top: 18px; display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; align-items: start; padding: 12px 14px; border: 1px dashed var(--faint); border-radius: var(--radius); background: var(--surface); font-size: 13px; }
+.pending-note strong { font-weight: 600; }
+.pending-note .tag { grid-row: span 2; }
+.pending-note p { margin: 0; color: var(--muted); }
+
+.layout { display: grid; gap: 24px; margin-top: 22px; }
+@media (min-width: 980px) { .layout { grid-template-columns: 250px minmax(0, 1fr); align-items: start; } }
+
+.rail { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+@media (min-width: 980px) { .rail { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); max-height: calc(100vh - 32px); overflow-y: auto; } }
+.rail > summary { list-style: none; cursor: pointer; padding: 12px 14px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+.rail > summary::-webkit-details-marker { display: none; }
+.rail > summary .count { font-weight: 500; color: var(--muted); font-size: 12px; }
+.rail-body { display: grid; gap: 16px; padding: 4px 14px 16px; }
+.fgroup { display: grid; gap: 6px; }
+.flabel { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.search { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
+.select { width: 100%; padding: 7px 8px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip { border: 1px solid var(--line); background: var(--bg); padding: 3px 9px; border-radius: 999px; font-size: 12px; cursor: pointer; line-height: 1.5; }
+.chip:hover { border-color: var(--faint); }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.seg button { border: 0; background: var(--bg); padding: 6px 0; font-size: 12px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--surface); font-weight: 600; }
+.reset { justify-self: start; border: 0; background: none; color: var(--accent); padding: 0; cursor: pointer; font-size: 13px; text-decoration: underline; text-underline-offset: 2px; }
+
+.listbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px; padding-bottom: 10px; }
+.listbar .shown { color: var(--muted); }
+.listbar .shown b { color: var(--ink); }
+.sortwrap { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.sortwrap select { padding: 5px 8px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--ink); }
+
+.ledger { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.cols, .row-btn { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 4px 14px; }
+@media (min-width: 760px) {
+  .cols, .row-btn { grid-template-columns: 64px minmax(0, 1.5fr) minmax(0, 1.25fr) minmax(0, 1fr) 30px; }
+}
+@media (min-width: 1180px) {
+  .cols, .row-btn { grid-template-columns: 64px minmax(0, 1.5fr) minmax(0, 1.2fr) minmax(0, 1fr) 30px 46px 108px; }
+}
+.cols { padding: 9px 14px; border-bottom: 1px solid var(--line); font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.cols > span:nth-child(n+3) { display: none; }
+@media (min-width: 760px) { .cols > span:nth-child(-n+5) { display: block; } }
+@media (min-width: 1180px) { .cols > span { display: block !important; } }
+.cols .pend { color: var(--faint); }
+
+.course + .course { border-top: 1px solid var(--line); }
+.row-btn { width: 100%; text-align: left; background: none; border: 0; padding: 12px 14px; cursor: pointer; align-items: start; }
+.row-btn:hover { background: var(--bg); }
+.course.open > .head { background: var(--accent-soft); }
+.course.open .row-btn:hover { background: transparent; }
+
+/* course row = info button + "My tier" picker; they sit side by side from 760px, stacked below */
+.head, .cols-wrap { display: grid; grid-template-columns: minmax(0, 1fr); }
+.cols-wrap { border-bottom: 1px solid var(--line); }
+.cols-wrap .cols { border-bottom: 0; }
+.pick-h { display: none; }
+.pick { padding: 0 14px 12px 92px; }
+@media (min-width: 760px) {
+  .head, .cols-wrap { grid-template-columns: minmax(0, 1fr) 136px; }
+  .pick-h { display: block; padding: 9px 14px 9px 0; font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+  .pick { padding: 10px 14px 10px 0; }
+}
+.tiersel { width: 100%; max-width: 180px; padding: 5px 6px; font-size: 12.5px; border-radius: var(--radius); border: 1px dashed var(--faint); background: var(--surface); color: var(--muted); cursor: pointer; }
+.tiersel:disabled { cursor: not-allowed; opacity: .6; }
+.tiersel.t-Favorite { background: var(--accent); border: 1px solid var(--accent); color: var(--surface); font-weight: 600; }
+.tiersel.t-Great { background: var(--accent-soft); border: 1px solid var(--accent); color: var(--accent); font-weight: 600; }
+.tiersel.t-Good { background: var(--surface); border: 1px solid var(--accent); color: var(--ink); }
+.tiersel.t-Acceptable { background: var(--surface); border: 1px solid var(--faint); color: var(--ink); }
+.tiersel.t-Pre-enrolled { background: var(--full-soft); border: 1px solid var(--full); color: var(--full); font-weight: 600; }
+.tiersel.t-Completed { background: var(--bg); border: 1px solid var(--line); color: var(--muted); }
+.rules summary { cursor: pointer; font-size: 13px; color: var(--accent); }
+.rules ul { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: 12.5px; color: var(--ink); max-width: 90ch; }
+.warn-line { display: block; margin-top: 5px; font-size: 12px; font-weight: 500; color: var(--warn); }
+.hint-line { display: block; margin-top: 5px; font-size: 12px; font-weight: 400; color: var(--muted); }
+
+.viewbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-bottom: 12px; }
+.tabs { display: inline-grid; grid-auto-flow: column; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
+.tabs button { border: 0; background: none; padding: 7px 14px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--muted); }
+.tabs button + button { border-left: 1px solid var(--line); }
+.tabs button[aria-selected="true"] { background: var(--accent); color: var(--surface); }
+.tabcount { display: inline-block; min-width: 18px; margin-left: 4px; padding: 0 5px; border-radius: 9px; background: var(--bg); color: var(--ink); font-size: 11px; font-variant-numeric: tabular-nums; text-align: center; }
+.sync { font-size: 12px; color: var(--muted); }
+.sync.err { color: var(--warn); }
+.io { display: inline-flex; gap: 6px; margin-left: auto; }
+.iobtn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: var(--radius); padding: 5px 10px; font-size: 12.5px; cursor: pointer; }
+.iobtn:hover { border-color: var(--faint); }
+.layout.listmode { grid-template-columns: minmax(0, 1fr); }
+
+.summary { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; margin-bottom: 14px; display: grid; gap: 12px; }
+.sum-tiers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+@media (min-width: 640px) { .sum-tiers { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1000px) { .sum-tiers { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.sum-tiers div { border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px; }
+.sum-tiers small { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.sum-tiers b { font-family: var(--font-mono); font-size: 18px; font-weight: 500; }
+.sum-tiers span { font-size: 12px; color: var(--muted); }
+.issues { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; }
+.issues li.ok { color: var(--good); list-style: none; margin-left: -18px; }
+.summary p { margin: 0; font-size: 12px; color: var(--muted); }
+.tier-h { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; padding: 10px 14px; background: var(--bg); border-bottom: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
+.tier-h b { font-family: var(--font-display); font-size: 17px; font-weight: 600; color: var(--ink); }
+* + .tier-h { border-top: 1px solid var(--line); }
+.tier-empty { padding: 12px 14px; font-size: 13px; color: var(--faint); }
+.cid { font-family: var(--font-mono); font-size: 13px; font-weight: 500; padding-top: 1px; }
+.ctitle { font-weight: 600; line-height: 1.35; }
+.csub { display: block; font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 2px; }
+.flags { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.flag { font-size: 10.5px; font-weight: 600; letter-spacing: .03em; padding: 1px 6px; border-radius: 3px; text-transform: uppercase; }
+.flag.new { background: var(--good-soft); color: var(--good); }
+.flag.chg { background: var(--warn-soft); color: var(--warn); }
+.flag.tba { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+.flag.app { background: var(--block-soft); color: var(--block); }
+.flag.core { background: var(--full-soft); color: var(--full); }
+.c-when, .c-prof, .c-cr, .c-pend { display: none; }
+.c-when-m { grid-column: 2; font-size: 12.5px; color: var(--muted); }
+@media (min-width: 760px) {
+  .c-prof, .c-cr { display: block; }
+  .c-when { display: grid; gap: 3px; }
+  .c-when-m, .c-cr-m { display: none; }
+}
+@media (min-width: 1180px) { .c-pend { display: block; } }
+.c-when { font-size: 12.5px; }
+.when-line { display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+.part { font-size: 10.5px; font-weight: 600; padding: 1px 6px; border-radius: 3px; white-space: nowrap; }
+.part.full { background: var(--full-soft); color: var(--full); }
+.part.a { background: var(--aterm-soft); color: var(--aterm); }
+.part.b { background: var(--bterm-soft); color: var(--bterm); }
+.part.blk { background: var(--block-soft); color: var(--block); }
+.c-prof { font-size: 12.5px; }
+.c-cr { font-family: var(--font-mono); font-size: 12.5px; text-align: right; }
+.c-pend { font-family: var(--font-mono); color: var(--faint); text-align: center; }
+.c-need { display: none; }
+@media (min-width: 1180px) { .c-need { display: block; } }
+.need { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 3px; white-space: nowrap; line-height: 1.4; }
+.need-m { display: block; margin-top: 6px; font-size: 12px; color: var(--muted); font-weight: 400; }
+@media (min-width: 1180px) { .need-m { display: none; } }
+.b90 { background: var(--h90); color: var(--h90-fg); }
+.b70 { background: var(--h70); color: var(--h70-fg); }
+.b50 { background: var(--h50); color: var(--h50-fg); }
+.b25 { background: var(--h25); color: var(--h25-fg); }
+.b0  { background: var(--h0);  color: var(--h0-fg); }
+.bna { background: var(--hna); color: var(--hna-fg); }
+.flag.req { background: var(--bterm-soft); color: var(--bterm); }
+.hmrow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; }
+.hmrow div { border-radius: 3px; padding: 5px 4px 4px; text-align: center; }
+.hmrow small { display: block; font-size: 9.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; opacity: .85; }
+.hmrow b { font-family: var(--font-mono); font-size: 13px; font-weight: 500; }
+.cm-nums { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; font-size: 11.5px; color: var(--muted); }
+.cm-nums b { display: block; font-family: var(--font-mono); font-size: 14px; font-weight: 500; color: var(--ink); }
+.cm-adj { margin: 0; font-size: 12px; color: var(--ink); padding-left: 8px; border-left: 2px solid var(--h25); }
+.cm-adj.easier { border-left-color: var(--h90); }
+.more { color: var(--faint); font-size: 12px; }
+
+.detail { padding: 4px 14px 22px; display: grid; gap: 18px; border-top: 1px solid var(--line); background: var(--surface); }
+@media (min-width: 760px) { .detail { padding-left: 92px; } }
+.intro { font-family: var(--font-display); font-size: 17px; line-height: 1.45; max-width: 68ch; margin: 14px 0 0; }
+.dgrid { display: grid; gap: 18px; }
+@media (min-width: 1100px) { .dgrid { grid-template-columns: minmax(0, 1fr) 252px; } }
+/* grid items default to min-width:auto, which lets the wide sections table push under the side card */
+.dgrid > *, .dmain > *, .side > * { min-width: 0; }
+.dmain { display: grid; gap: 16px; align-content: start; }
+.h3 { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+th, td { text-align: left; padding: 8px 7px; vertical-align: top; border-bottom: 1px solid var(--line); }
+th:first-child, td:first-child { padding-left: 10px; }
+tr:last-child td { border-bottom: 0; }
+th { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: var(--bg); white-space: nowrap; }
+td.nw { white-space: nowrap; }
+.extra { display: block; color: var(--muted); font-size: 11.5px; margin-top: 3px; }
+.secnote { display: block; color: var(--warn); font-size: 11.5px; margin-top: 3px; }
+.tl { position: relative; width: 108px; height: 10px; border-radius: 2px; background: var(--bg); border: 1px solid var(--line); margin-top: 5px; }
+.tl i { position: absolute; top: -1px; bottom: -1px; border-radius: 2px; }
+.tl .brk { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(135deg, var(--line) 0 2px, transparent 2px 4px); }
+.tl-axis { display: flex; justify-content: space-between; width: 108px; font-size: 9.5px; color: var(--faint); margin-top: 2px; }
+
+.side { display: grid; gap: 16px; align-content: start; }
+.model { border: 1px dashed var(--faint); border-radius: var(--radius); padding: 12px; display: grid; gap: 8px; }
+.model dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; margin: 0; font-size: 12.5px; }
+.model dt { color: var(--muted); }
+.model dd { margin: 0; color: var(--faint); }
+.model p { margin: 0; font-size: 12px; color: var(--muted); }
+.hist { display: grid; grid-template-columns: repeat(13, minmax(0, 1fr)); gap: 3px; }
+.hist span { height: 16px; border-radius: 2px; background: var(--bg); border: 1px solid var(--line); }
+.hist span.on { background: var(--accent); border-color: var(--accent); }
+.hist span.su.on { background: var(--block); border-color: var(--block); }
+.hist-axis { display: flex; justify-content: space-between; font-size: 10px; color: var(--faint); margin-top: 3px; }
+.histlist { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 3px; font-size: 12.5px; }
+.histlist li { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 6px; }
+.histlist b { font-weight: 600; }
+.meta-list { display: grid; gap: 6px; font-size: 12.5px; }
+.meta-list div { display: grid; grid-template-columns: 96px 1fr; gap: 8px; }
+.meta-list span:first-child { color: var(--muted); }
+.fulldesc summary { cursor: pointer; color: var(--accent); font-size: 13px; }
+.fulldesc div { white-space: pre-line; max-width: 75ch; margin-top: 8px; color: var(--ink); font-size: 13.5px; }
+.links { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; }
+.empty { padding: 40px 14px; text-align: center; color: var(--muted); }
+.foot { margin-top: 28px; font-size: 12px; color: var(--muted); max-width: 90ch; }
+@media (prefers-reduced-motion: no-preference) { .row-btn { transition: background .12s; } }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div class="eyebrow">CBS MBA · Course Match · Spring 2027</div>
+    <h1>Spring 2027 Course Book</h1>
+    <p class="lede">Every MBA course with a Spring 2027 section: who teaches it, when it meets, what it covers, and who taught it before. EMBA, PhD, MS and undergraduate sections are left out.</p>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <div class="pending-note">
+    <span class="flag tba tag">Next</span>
+    <p><strong>Pick a tier in the "My tier" column to build your list, and set your core status in My list.</strong> "Get it at" is the lowest tier at which at least 70% of students got a seat last spring, adjusted for section counts that changed this year. My list checks the 18-credit cap, clashes with your pre-enrolled core, prerequisites and corequisites, and courses ranked below the tier they needed. Ratings wait on the course evaluations.</p>
+    <p>Courses and sections pulled from the public CBS course directory on __PULLED__. Check the official listing before you bid; sections and instructors can still change.</p>
+  </div>
+
+  <div class="layout" id="layout">
+    <details class="rail" id="rail">
+      <summary>Filters <span class="count" id="activeCount"></span></summary>
+      <div class="rail-body">
+        <div class="fgroup">
+          <label class="flabel" for="q">Search</label>
+          <input class="search" id="q" type="search" placeholder="Title, course ID or professor" autocomplete="off">
+        </div>
+        <div class="fgroup">
+          <span class="flabel">Show</span>
+          <div class="seg" id="typeSeg" role="group" aria-label="Course type">
+            <button type="button" data-v="Elective" aria-pressed="true">Electives</button>
+            <button type="button" data-v="Core" aria-pressed="false">Core</button>
+            <button type="button" data-v="All" aria-pressed="false">All</button>
+          </div>
+        </div>
+        <div class="fgroup"><span class="flabel">Part of term</span><div class="chips" id="f-part"></div></div>
+        <div class="fgroup"><span class="flabel">Meets on</span><div class="chips" id="f-day"></div></div>
+        <div class="fgroup"><span class="flabel">Time of day</span><div class="chips" id="f-tod"></div></div>
+        <div class="fgroup"><span class="flabel">Credits</span><div class="chips" id="f-cr"></div></div>
+        <div class="fgroup">
+          <label class="flabel" for="f-div">Division</label>
+          <select class="select" id="f-div"><option value="">All divisions</option></select>
+        </div>
+        <div class="fgroup">
+          <label class="flabel" for="f-path">Curriculum pathway</label>
+          <select class="select" id="f-path"><option value="">All pathways</option></select>
+        </div>
+        <div class="fgroup"><span class="flabel">Get it at</span><div class="chips" id="f-need"></div></div>
+        <div class="fgroup"><span class="flabel">Flags</span><div class="chips" id="f-flag"></div></div>
+        <button type="button" class="reset" id="reset">Clear all filters</button>
+      </div>
+    </details>
+
+    <main style="min-width:0">
+      <div class="viewbar">
+        <div class="tabs" role="tablist" aria-label="View">
+          <button type="button" role="tab" id="tab-all" aria-selected="true">All courses</button>
+          <button type="button" role="tab" id="tab-list" aria-selected="false">My list<span class="tabcount" id="listCount">0</span></button>
+        </div>
+        <span class="sync" id="sync" role="status"></span>
+        <span class="io" id="io" hidden>
+          <button type="button" class="iobtn" id="exportBtn">Export list</button>
+          <button type="button" class="iobtn" id="importBtn">Import list</button>
+          <input type="file" id="importFile" accept="application/json,.json" hidden>
+        </span>
+      </div>
+      <div id="summary" hidden></div>
+      <div class="listbar">
+        <div class="shown" id="shown"></div>
+        <label class="sortwrap" for="sort" id="sortwrap">Sort
+          <select id="sort">
+            <option value="id">Course ID</option>
+            <option value="title">Title A–Z</option>
+            <option value="div">Division</option>
+            <option value="hard">Hardest to get</option>
+            <option value="ranked">Most ranked last spring</option>
+            <option value="secs">Most sections</option>
+            <option value="freq">Most often offered</option>
+            <option value="rare">Least often offered</option>
+          </select>
+        </label>
+      </div>
+      <div class="ledger">
+        <div class="cols-wrap" aria-hidden="true">
+          <div class="cols">
+            <span>ID</span><span>Course</span><span>Spring 2027 sections</span><span>Professors</span><span style="text-align:right">Cr</span>
+            <span class="pend" style="text-align:center">Rating</span><span>Get it at</span>
+          </div>
+          <span class="pick-h">My tier</span>
+        </div>
+        <div id="list"></div>
+      </div>
+      <p class="foot">Part of term: Full Term runs Jan 25 – Apr 30, A Term Jan 25 – Mar 5, B Term Mar 22 – Apr 30, Block Week Jan 19–23. Day letters follow the CBS convention (R = Thursday). "Professor change" means none of the Spring 2026 instructors is listed for Spring 2027. "Application only" sections are not allocated through Course Match.</p>
+      <p class="foot">How "Get it at" works: the lowest tier where at least 70% of students who ranked the course at that tier got a seat in Spring 2026. "Favorite, risky" means even Favorite cleared only 50–69% of the time; "Long shot" means under 50%. If a course has fewer sections this spring and was already full, it moves up one level; with at least 50% more sections it moves down one level, but never below Great. Courses that were less than 75% full are capped at Great, because their low percentages come from prerequisites or schedule clashes. The heatmap combines all sections of a course, so a popular time slot can fill while the course as a whole still shows open seats.</p>
+      <p class="foot">A personal planning tool, not affiliated with or endorsed by Columbia Business School. Course Match, Vergil and the Registration Calendar are the official sources.</p>
+    </main>
+  </div>
+</div>
+
+<script type="application/json" id="course-data">__DATA__</script>
+<script>
+(function () {
+  const DATA = JSON.parse(document.getElementById('course-data').textContent);
+  const PAST_TERMS = ['Fall 2022','Spring 2023','Summer 2023','Fall 2023','Spring 2024','Summer 2024','Fall 2024','Spring 2025','Summer 2025','Fall 2025','Spring 2026','Summer 2026','Fall 2026'];
+  const DAY = { Monday: 'M', Tuesday: 'T', Wednesday: 'W', Thursday: 'R', Friday: 'F', Saturday: 'S', Sunday: 'U' };
+  const DAY_NAMES = { M: 'Mon', T: 'Tue', W: 'Wed', R: 'Thu', F: 'Fri', S: 'Sat' };
+  const PARTS = ['Full Term', 'A Term', 'B Term', 'Block Week', 'LEAD'];
+  const TODS = ['Morning', 'Afternoon', 'Evening', 'TBA'];
+  const FLAGS = [['new', 'New course'], ['chg', 'Professor change'], ['nosp', 'Not offered Spring 2026'], ['tba', 'Professor TBA'], ['app', 'Application only'], ['req', 'Has prereq or coreq'], ['fits', 'Fits my core schedule']];
+  const NEEDS = ['Acceptable', 'Good', 'Great', 'Favorite', 'Favorite, risky', 'Long shot'];
+  const NEED_BAND = { 'Acceptable': 'b90', 'Good': 'b90', 'Great': 'b70', 'Favorite': 'b50', 'Favorite, risky': 'b25', 'Long shot': 'b0' };
+  const band = p => p == null ? 'bna' : p >= .9 ? 'b90' : p >= .7 ? 'b70' : p >= .5 ? 'b50' : p >= .25 ? 'b25' : 'b0';
+  const needKey = c => !c.cm ? 'No data' : (c.cm.need === 'Acceptable' || c.cm.need === 'Good') ? 'low' : c.cm.need;
+  const needChip = c => c.type === 'Core' ? '<span class="more">Core</span>' : `<span class="need ${c.cm ? NEED_BAND[c.cm.need] : 'bna'}">${esc(c.cm ? c.cm.need : 'No data')}</span>`;
+  const hardness = c => c.cm ? NEEDS.indexOf(c.cm.need) * 1000 + (c.cm.perSeat || 0) : -1;
+
+  // ---- My list: course id -> tier, saved to the artifact's db (or this browser when db is unavailable)
+  const TIERS = ['Favorite', 'Great', 'Good', 'Acceptable'];
+  const TIER_RANK = { Acceptable: 0, Good: 1, Great: 2, Favorite: 3 };
+  const NEED_RANK = { Acceptable: 0, Good: 1, Great: 2, Favorite: 3, 'Favorite, risky': 4, 'Long shot': 5 };
+  const LOCAL_KEY = 'cbs-s27-my-list';
+  const CREDIT_CAP = 18; // CBS MBA maximum per term, pre-enrolled core included (registration cheat sheet)
+  let picks = new Map(); // id -> { tier, section? }; electives use TIERS, core uses 'Completed' or 'Pre-enrolled' + section
+  let view = 'all';
+  let curCores = [];
+  const store = { mode: 'loading', db: null, canWrite: true, chains: new Map() };
+  const byId = new Map(DATA.map(c => [c.id, c]));
+  const isCore = c => c.type === 'Core';
+  const tierOf = id => (picks.get(id) || {}).tier || '';
+  const validPick = (c, p) => !!(c && p) && (isCore(c)
+    ? p.tier === 'Completed' || (p.tier === 'Pre-enrolled' && c.sections.some(s => s.sec === p.section))
+    : TIERS.includes(p.tier));
+  const tierLabel = id => { const p = picks.get(id); return !p ? '' : p.tier === 'Pre-enrolled' ? `Pre-enrolled, section ${p.section}` : p.tier === 'Completed' ? 'Completed or exempt' : p.tier; };
+
+  // Clash check: two courses clash when every section of one overlaps every section of the other
+  // (same day, overlapping times, overlapping date ranges). Uses each section's main meeting pattern.
+  const slot = s => ({ d: s.dl, a: s.start, b: s.end, f: pd(s.from), t: pd(s.to) ?? pd(s.from) });
+  const overlap = (x, y) => x.a != null && y.a != null && x.f != null && y.f != null
+    && [...x.d].some(ch => y.d.includes(ch)) && x.a < y.b && y.a < x.b && x.f <= y.t && y.f <= x.t;
+  // Core sections the viewer is pre-enrolled in; elective sections that overlap them can't be allocated
+  function coreSlots() {
+    const out = [];
+    picks.forEach((p, id) => {
+      if (p.tier !== 'Pre-enrolled') return;
+      const c = byId.get(id), s = c && c.sections.find(x => x.sec === p.section);
+      if (s) out.push({ c, s, slot: slot(s) });
+    });
+    return out;
+  }
+  const blockedBy = (s, cores) => cores.filter(k => overlap(slot(s), k.slot));
+  const usableSecs = (c, cores) => c.sections.filter(s => !blockedBy(s, cores).length);
+  const alwaysClash = (c1, c2, cores) => {
+    const u1 = usableSecs(c1, cores), u2 = usableSecs(c2, cores);
+    return u1.length > 0 && u2.length > 0 && u1.every(s1 => u2.every(s2 => overlap(slot(s1), slot(s2))));
+  };
+  function clashMap(ids, cores) {
+    const m = new Map(ids.map(id => [id, []]));
+    for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) {
+      const a = byId.get(ids[i]), b = byId.get(ids[j]);
+      if (alwaysClash(a, b, cores)) { m.get(a.id).push(b); m.get(b.id).push(a); }
+    }
+    return m;
+  }
+  // Prerequisites must be completed in an earlier term; a corequisite can be taken in the same term, so rank both
+  function reqNotes(c) {
+    const warn = [];
+    (c.rq || []).forEach(r => {
+      const join = r.mode === 'any' ? ' or ' : ' and ';
+      const name = x => `${x.id} ${x.title}`;
+      if (r.type === 'co') {
+        const has = x => picks.has(x.id);
+        if (!(r.mode === 'any' ? r.courses.some(has) : r.courses.every(has)))
+          warn.push(`Corequisite: also rank ${r.courses.filter(x => !has(x)).map(name).join(join)}`);
+        return;
+      }
+      const done = x => tierOf(x.id) === 'Completed';
+      if (r.mode === 'any' ? r.courses.some(done) : r.courses.every(done)) return;
+      const sameTerm = r.courses.filter(x => picks.has(x.id) && !done(x));
+      warn.push(sameTerm.length
+        ? `Prerequisite ${sameTerm.map(x => x.id).join(', ')} is on your spring list, but prerequisites must be finished in an earlier term`
+        : `Needs ${r.courses.map(name).join(join)} completed before spring`);
+    });
+    return warn;
+  }
+  function pickNotes(c, clashes, cores) {
+    const warn = [], hint = [];
+    if (!isCore(c) && cores.length) {
+      const blocked = c.sections.filter(s => blockedBy(s, cores).length);
+      const fits = c.sections.filter(s => !blocked.includes(s));
+      if (!fits.length) warn.push(`Every section clashes with your core (${[...new Set(blocked.flatMap(s => blockedBy(s, cores).map(k => k.c.id)))].join(', ')}), so Course Match can't place you in it`);
+      else if (blocked.length) hint.push(`Section${blocked.length > 1 ? 's' : ''} ${blocked.map(s => s.sec).join(', ')} clash${blocked.length > 1 ? '' : 'es'} with your core; ${fits.map(s => s.sec).join(', ')} ${fits.length > 1 ? 'fit' : 'fits'}`);
+    }
+    const t = tierOf(c.id);
+    if (isCore(c) || !TIERS.includes(t)) return { warn, hint };
+    if (c.cm) {
+      const need = c.cm.need, favPct = Math.round((c.cm.fav ?? c.cm.great ?? 0) * 100);
+      const cut = c.cm.n27 < c.cm.n26 && NEED_RANK[c.cm.base] < NEED_RANK[need];
+      const hard = cut
+        ? `Fewer sections this spring (${c.cm.n27}, was ${c.cm.n26}), so even a Favorite isn't safe`
+        : `Even a Favorite got a seat only ${favPct}% of the time last spring`;
+      if (TIER_RANK[t] < Math.min(NEED_RANK[need], 3)) warn.push(NEED_RANK[need] >= 4 ? hard
+        : `Needs ${need === 'Favorite' ? 'a Favorite' : 'at least ' + need}${cut ? ' now that it has fewer sections' : ' based on last spring'}`);
+      else if (t === 'Favorite' && NEED_RANK[need] >= 4) warn.push(hard);
+      else if (t === 'Favorite' && NEED_RANK[need] <= 2) hint.push(`Cleared at ${need} last spring, so this Favorite might be better used elsewhere`);
+    }
+    (clashes || []).forEach(o => warn.push(`Always clashes with ${o.id} ${o.title}`));
+    warn.push(...reqNotes(c));
+    return { warn, hint };
+  }
+
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const partGroup = p => p.startsWith('Block') || p.startsWith('Half Block') ? 'Block Week' : p.startsWith('LEAD') ? 'LEAD' : p;
+  const partClass = p => ({ 'Full Term': 'full', 'A Term': 'a', 'B Term': 'b' }[partGroup(p)] || 'blk');
+  const partShort = p => p.startsWith('Half Block') ? 'Half block' : p.startsWith('Block') ? 'Block wk' : p.replace(' (core)', '');
+  const dayLetters = d => d ? d.split(',').map(x => DAY[x.trim()] || '').join('') : '';
+  const fmtTime = t => t && !t.startsWith(':') ? t.replace(/:00/g, '').replace(/ - /, '–').replace(/(AM|PM)/g, m => m.toLowerCase()) : 'TBA';
+  const tod = s => s.start == null ? 'TBA' : s.start < 720 ? 'Morning' : s.start < 1020 ? 'Afternoon' : 'Evening';
+  const isApp = s => /app-only/i.test(s.notes || '');
+
+  // Derived per-course fields
+  DATA.forEach(c => {
+    c.profs = [...new Set(c.sections.flatMap(s => s.profs))];
+    c.appOnly = c.sections.every(isApp);
+    c.sections.forEach(s => {
+      s.group = partGroup(s.part); s.tod = tod(s); s.dl = dayLetters(s.days);
+      if (s.time && s.time.startsWith(':')) s.time = '';
+    });
+    c.hay = (c.id + ' ' + c.title + ' ' + c.profs.join(' ') + ' ' + c.division + ' ' + c.pathways.join(' ')).toLowerCase();
+  });
+
+  const state = { q: '', type: 'Elective', part: new Set(), day: new Set(), tod: new Set(), cr: new Set(), div: '', path: '', need: new Set(), flag: new Set(), sort: 'id' };
+  const open = new Set();
+
+  function chipGroup(id, items, key) {
+    const el = document.getElementById(id);
+    el.innerHTML = items.map(([v, label]) => `<button type="button" class="chip" data-v="${esc(v)}" aria-pressed="false">${esc(label)}</button>`).join('');
+    el.addEventListener('click', e => {
+      const b = e.target.closest('.chip'); if (!b) return;
+      const v = b.dataset.v, set = state[key];
+      set.has(v) ? set.delete(v) : set.add(v);
+      b.setAttribute('aria-pressed', set.has(v));
+      render();
+    });
+  }
+  chipGroup('f-part', PARTS.map(p => [p, p]), 'part');
+  chipGroup('f-day', Object.entries(DAY_NAMES).map(([k, v]) => [k, v]), 'day');
+  chipGroup('f-tod', TODS.map(t => [t, t]), 'tod');
+  chipGroup('f-cr', [['1.5', '1.5'], ['3', '3']], 'cr');
+  chipGroup('f-need', [['low', 'Good or lower'], ['Great', 'Great'], ['Favorite', 'Favorite'], ['Favorite, risky', 'Favorite, risky'], ['Long shot', 'Long shot'], ['No data', 'No data']], 'need');
+  chipGroup('f-flag', FLAGS, 'flag');
+
+  const fill = (id, vals) => { document.getElementById(id).insertAdjacentHTML('beforeend', vals.map(v => `<option>${esc(v)}</option>`).join('')); };
+  fill('f-div', [...new Set(DATA.map(c => c.division))].sort());
+  fill('f-path', [...new Set(DATA.flatMap(c => c.pathways))].sort());
+
+  const ui = {
+    q: document.getElementById('q'), div: document.getElementById('f-div'), path: document.getElementById('f-path'),
+    sort: document.getElementById('sort'), list: document.getElementById('list'), shown: document.getElementById('shown'),
+    active: document.getElementById('activeCount'), seg: document.getElementById('typeSeg'), rail: document.getElementById('rail'),
+    summary: document.getElementById('summary'), layout: document.getElementById('layout'), sortwrap: document.getElementById('sortwrap'),
+    sync: document.getElementById('sync'), count: document.getElementById('listCount')
+  };
+  ui.q.addEventListener('input', () => { state.q = ui.q.value.trim().toLowerCase(); render(); });
+  ui.div.addEventListener('change', () => { state.div = ui.div.value; render(); });
+  ui.path.addEventListener('change', () => { state.path = ui.path.value; render(); });
+  ui.sort.addEventListener('change', () => { state.sort = ui.sort.value; render(); });
+  ui.seg.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    state.type = b.dataset.v;
+    ui.seg.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    render();
+  });
+  document.getElementById('reset').addEventListener('click', () => {
+    Object.assign(state, { q: '', div: '', path: '' });
+    ['part', 'day', 'tod', 'cr', 'need', 'flag'].forEach(k => state[k].clear());
+    ui.q.value = ''; ui.div.value = ''; ui.path.value = '';
+    document.querySelectorAll('.chip[aria-pressed="true"]').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    render();
+  });
+
+  function secMatches(s) {
+    if (state.part.size && !state.part.has(s.group)) return false;
+    if (state.day.size && ![...state.day].some(d => s.dl.includes(d))) return false;
+    if (state.tod.size && !state.tod.has(s.tod)) return false;
+    return true;
+  }
+  function courseMatches(c) {
+    if (state.type !== 'All' && c.type !== state.type) return false;
+    if (state.q && !state.q.split(/\s+/).every(w => c.hay.includes(w))) return false;
+    if (state.cr.size && !state.cr.has(String(c.credits))) return false;
+    if (state.div && c.division !== state.div) return false;
+    if (state.path && !c.pathways.includes(state.path)) return false;
+    if (state.need.size && !state.need.has(needKey(c))) return false;
+    for (const f of state.flag) {
+      if (f === 'req' && !c.reqs.length) return false;
+      if (f === 'fits' && (isCore(c) || (curCores.length && !usableSecs(c, curCores).length))) return false;
+      if (f === 'new' && !c.newCourse) return false;
+      if (f === 'chg' && !c.profChange) return false;
+      if (f === 'nosp' && c.inSpring26) return false;
+      if (f === 'tba' && !c.tbaProf) return false;
+      if (f === 'app' && !c.sections.some(isApp)) return false;
+    }
+    return c.sections.some(secMatches);
+  }
+  const sorters = {
+    id: (a, b) => a.id.localeCompare(b.id),
+    title: (a, b) => a.title.localeCompare(b.title),
+    div: (a, b) => a.division.localeCompare(b.division) || a.id.localeCompare(b.id),
+    hard: (a, b) => hardness(b) - hardness(a) || a.id.localeCompare(b.id),
+    ranked: (a, b) => (b.cm ? b.cm.ranked : -1) - (a.cm ? a.cm.ranked : -1) || a.id.localeCompare(b.id),
+    secs: (a, b) => b.sections.length - a.sections.length || a.id.localeCompare(b.id),
+    freq: (a, b) => b.termsOffered - a.termsOffered || a.id.localeCompare(b.id),
+    rare: (a, b) => a.termsOffered - b.termsOffered || a.id.localeCompare(b.id)
+  };
+
+  function flagsHtml(c) {
+    const f = [];
+    if (c.type === 'Core') f.push('<span class="flag core">Core</span>');
+    if (c.newCourse) f.push('<span class="flag new">New course</span>');
+    if (c.profChange) f.push('<span class="flag chg">Professor change</span>');
+    if (c.tbaProf) f.push('<span class="flag tba">Professor TBA</span>');
+    if (c.sections.some(isApp)) f.push(`<span class="flag app">${c.appOnly ? 'Application only' : 'Some sections app-only'}</span>`);
+    const rq = c.reqs.map(r => r.split(' — ')[0]);
+    if (rq.some(x => /^Prereq/i.test(x))) f.push('<span class="flag req">Prereq</span>');
+    if (rq.some(x => /^Coreq/i.test(x))) f.push('<span class="flag req">Coreq</span>');
+    return f.length ? `<span class="flags">${f.join('')}</span>` : '';
+  }
+  function whenLine(s, count) {
+    return `<span class="when-line"><span class="part ${partClass(s.part)}">${esc(partShort(s.part))}</span><span class="mono">${esc(s.dl || '—')} ${esc(fmtTime(s.time))}</span>${count > 1 ? `<span class="more">×${count}</span>` : ''}</span>`;
+  }
+  function whenHtml(c, max) {
+    // collapse identical patterns (same part/days/time) into one line with a count
+    const seen = new Map();
+    c.sections.forEach(s => { const k = s.part + '|' + s.dl + '|' + s.time; seen.set(k, (seen.get(k) || []).concat(s)); });
+    const lines = [...seen.values()];
+    const out = lines.slice(0, max).map(g => whenLine(g[0], g.length));
+    if (lines.length > max) out.push(`<span class="more">+${lines.length - max} more patterns</span>`);
+    return out.join('');
+  }
+  function profHtml(c) {
+    const p = c.profs.slice(0, 3).map(esc).join(', ');
+    return p + (c.profs.length > 3 ? ` <span class="more">+${c.profs.length - 3}</span>` : '');
+  }
+
+  // Timeline: Jan 14 → Apr 30, 2027, with spring break shaded (Mar 6 – Mar 21)
+  const T0 = Date.UTC(2027, 0, 14), T1 = Date.UTC(2027, 3, 30);
+  const pd = s => { const m = /^(\d\d)\/(\d\d)\/(\d{4})$/.exec(s || ''); return m ? Date.UTC(+m[3], +m[1] - 1, +m[2]) : null; };
+  const pct = t => Math.max(0, Math.min(100, (t - T0) / (T1 - T0) * 100));
+  function timeline(s) {
+    const a = pd(s.from), b = pd(s.to); if (a == null) return '';
+    const l = pct(a), w = Math.max(1.5, pct((b ?? a) + 864e5) - l);
+    const bl = pct(Date.UTC(2027, 2, 6)), bw = pct(Date.UTC(2027, 2, 22)) - bl;
+    return `<div class="tl" title="${esc(s.from)}${s.to && s.to !== s.from ? ' – ' + esc(s.to) : ''}"><span class="brk" style="left:${bl}%;width:${bw}%"></span><i style="left:${l}%;width:${w}%;background:var(--${{ full: 'full', a: 'aterm', b: 'bterm', blk: 'block' }[partClass(s.part)]})"></i></div><div class="tl-axis"><span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span></div>`;
+  }
+
+  function cmCard(c) {
+    const m = c.cm, title = '<h4 class="h3" style="margin:0">Spring 2026 Course Match</h4>';
+    const pending = `<dt>Past rating</dt><dd>Pending evaluations</dd><dt>${isCore(c) ? 'My status' : 'My tier'}</dt><dd>${esc(tierLabel(c.id) || (isCore(c) ? 'Not set' : 'Not on my list'))}</dd>`;
+    if (!m) return `<div class="model">${title}<p>${esc(c.cmWhy)}</p><dl>${pending}</dl></div>`;
+    const pc = p => p == null ? 'n/a' : Math.round(p * 100) + '%';
+    const cells = [['Favorite', m.fav], ['Great', m.great], ['Good', m.good], ['Accept.', m.acc]]
+      .map(([l, p]) => `<div class="${band(p)}"><small>${l}</small><b>${pc(p)}</b></div>`).join('');
+    const s = n => n + ' section' + (n === 1 ? '' : 's');
+    const secLine = m.n26 === m.n27 ? `${s(m.n27)}, same as last spring` : `${s(m.n27)}, was ${m.n26}`;
+    const norm = x => (x || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const renamed = norm(m.name26) && norm(m.name26) !== norm(c.title) ? `<p>Listed last spring as “${esc(m.name26)}”.</p>` : '';
+    return `<div class="model">${title}
+      <div class="hmrow" aria-label="Share of students who got a seat, by the tier they ranked it">${cells}</div>
+      <div class="cm-nums"><span><b>${m.ranked}</b>ranked it</span><span><b>${m.cap}</b>seats</span><span><b>${m.enr}</b>enrolled</span></div>
+      <p>${m.perSeat} students ranked it per seat · ${m.filled ? 'filled' : (m.cap - m.enr) + ' seats left over'}. This spring: ${secLine}.</p>
+      ${renamed}
+      ${m.adj ? `<p class="cm-adj${/easier|left over/.test(m.adj) ? ' easier' : ''}">${esc(m.adj)}</p>` : ''}
+      <dl><dt>Get it at</dt><dd>${needChip(c)}</dd>${pending}</dl>
+    </div>`;
+  }
+
+  function detailHtml(c) {
+    const rows = c.sections.map(s => {
+      const extra = s.extra.map(x => `<span class="extra">Also ${esc(x.days)} ${esc(x.dates)} · ${esc(fmtTime(x.time))}${x.room ? ' · ' + esc(x.room) : ''}</span>`).join('');
+      const note = isApp(s) ? `<span class="secnote">${esc(s.notes)}</span>` : '';
+      const profs = s.profs.map((p, i) => s.profLinks[i] && p !== 'New Adjunct' ? `<a href="${esc(s.profLinks[i])}" target="_blank" rel="noopener">${esc(p)}</a>` : esc(p)).join(', ');
+      return `<tr>
+        <td class="mono nw">${esc(s.sec)}</td>
+        <td>${profs}${note}</td>
+        <td class="nw"><span class="part ${partClass(s.part)}">${esc(s.part)}</span>${timeline(s)}<span class="extra mono">${esc(s.from.slice(0, 5))}${s.to && s.to !== s.from ? ' – ' + esc(s.to.slice(0, 5)) : ''}</span></td>
+        <td class="mono nw">${esc(s.dl || '—')}</td>
+        <td class="mono nw">${esc(fmtTime(s.time))}${extra}</td>
+        <td class="nw">${esc(s.room || '—')}</td>
+        <td class="nw">${s.syllabus ? `<a href="${esc(s.syllabus)}" target="_blank" rel="noopener">Syllabus</a>` : '<span class="more">—</span>'}</td>
+      </tr>`;
+    }).join('');
+    const offered = new Set(c.history.map(h => h.term));
+    const histCells = PAST_TERMS.map(t => `<span class="${t.startsWith('Summer') ? 'su ' : ''}${offered.has(t) ? 'on' : ''}" title="${esc(t)}${offered.has(t) ? ': offered' : ': not offered'}"></span>`).join('');
+    const recent = c.history.slice(-5).reverse().map(h => `<li><b>${esc(h.term)}</b>${esc(h.profs.join(', '))}</li>`).join('');
+    const firstNote = c.sections.some(s => /first class is mandatory/i.test(s.notes || ''));
+    return `<div class="detail">
+      ${c.intro ? `<p class="intro">${esc(c.intro)}</p>` : ''}
+      <div class="dgrid">
+        <div class="dmain">
+          <div>
+            <h4 class="h3">Spring 2027 sections</h4>
+            <div class="tablewrap"><table>
+              <thead><tr><th>Sec</th><th>Professor</th><th>Part of term · dates</th><th>Days</th><th>Time</th><th>Room</th><th></th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table></div>
+          </div>
+          <div class="meta-list">
+            <div><span>Division</span><span>${esc(c.division)}</span></div>
+            <div><span>Pathways</span><span>${c.pathways.length ? esc(c.pathways.join(', ')) : '—'}</span></div>
+            <div><span>Requisites</span><span>${c.reqs.length ? c.reqs.map(esc).join('<br>') : 'None listed'}</span></div>
+            ${firstNote ? '<div><span>Attendance</span><span>First class is mandatory to hold or add a seat.</span></div>' : ''}
+          </div>
+          ${c.desc && c.desc.length > c.intro.length + 20 ? `<details class="fulldesc"><summary>Full course description</summary><div>${esc(c.desc)}</div></details>` : ''}
+          <div class="links"><a href="${esc(c.url)}" target="_blank" rel="noopener">Official course page</a></div>
+        </div>
+        <div class="side">
+          ${cmCard(c)}
+          <div>
+            <h4 class="h3">Offering history</h4>
+            <div class="hist" aria-label="Terms offered, Fall 2022 to Fall 2026">${histCells}</div>
+            <div class="hist-axis"><span>F22</span><span>F24</span><span>F26</span></div>
+            ${recent ? `<ul class="histlist">${recent}</ul>` : '<p class="more" style="margin:8px 0 0">First time offered to MBAs.</p>'}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function pickHtml(c) {
+    const dis = store.canWrite ? '' : ' disabled';
+    const p = picks.get(c.id) || {};
+    if (isCore(c)) {
+      const val = p.tier === 'Completed' ? 'C' : p.tier === 'Pre-enrolled' ? 'S:' + p.section : '';
+      const secs = c.sections.map(s => `<option value="S:${esc(s.sec)}"${val === 'S:' + s.sec ? ' selected' : ''}>Section ${esc(s.sec)} · ${esc(s.dl || '—')} ${esc(fmtTime(s.time))}</option>`).join('');
+      return `<div class="pick"><select class="tiersel${p.tier ? ' t-' + p.tier : ''}" data-id="${esc(c.id)}" aria-label="My status for ${esc(c.title)}"${dis}>
+        <option value="">${p.tier ? 'Clear' : 'Set status…'}</option>
+        <option value="C"${val === 'C' ? ' selected' : ''}>Completed or exempt</option>
+        <optgroup label="Pre-enrolled this spring">${secs}</optgroup>
+      </select></div>`;
+    }
+    const t = p.tier || '';
+    return `<div class="pick"><select class="tiersel${t ? ' t-' + t : ''}" data-id="${esc(c.id)}" aria-label="My tier for ${esc(c.title)}"${dis}>
+      <option value="">${t ? 'Remove from list' : 'Add to list…'}</option>
+      ${TIERS.map(x => `<option value="${x}"${x === t ? ' selected' : ''}>${x}</option>`).join('')}
+    </select></div>`;
+  }
+
+  function rowHtml(c, clashes, cores) {
+    const isOpen = open.has(c.id);
+    const notes = pickNotes(c, clashes, cores || []);
+    const noteHtml = notes.warn.map(w => `<span class="warn-line">${esc(w)}</span>`).join('') + notes.hint.map(h => `<span class="hint-line">${esc(h)}</span>`).join('');
+    return `<article class="course${isOpen ? ' open' : ''}" data-id="${esc(c.id)}">
+      <div class="head">
+      <button type="button" class="row-btn" aria-expanded="${isOpen}">
+        <span class="cid">${esc(c.id)}</span>
+        <span class="ctitle">${esc(c.title)}<span class="csub">${esc(c.division)} · ${c.sections.length} section${c.sections.length > 1 ? 's' : ''}<span class="c-cr-m"> · ${c.credits} cr</span></span>${flagsHtml(c)}${c.type === 'Elective' ? `<span class="need-m">Get it at ${needChip(c)}</span>` : ''}${noteHtml}</span>
+        <span class="c-when">${whenHtml(c, 3)}</span>
+        <span class="c-prof">${profHtml(c)}</span>
+        <span class="c-cr">${c.credits}</span>
+        <span class="c-pend">—</span><span class="c-need">${needChip(c)}</span>
+        <span class="c-when-m">${whenHtml(c, 2)}<br>${profHtml(c)}</span>
+      </button>
+      ${pickHtml(c)}
+      </div>
+      ${isOpen ? detailHtml(c) : ''}
+    </article>`;
+  }
+
+  const RULES = [
+    'Course Match is not first come, first served. Submitting early gives no advantage, and nothing is final until schedules are released.',
+    'A hold on your Vergil account when schedules are sent means no allocation at all. Clear holds early with the office that placed them.',
+    'MBA students can carry at most 18 credits a term, pre-enrolled core included.',
+    "Don't rank anything that clashes with a pre-enrolled course. Dropping a pre-enrolled course needs your program center's approval.",
+    'A prerequisite must be completed in an earlier term. A corequisite can be taken the same term, so rank both courses.',
+    'Results appear in Course Match, then reach Vergil within 1 to 2 business days. Vergil is the record of enrollment, not Canvas.',
+    'Add/Drop happens in Vergil, first come, first served, 9:30 AM to 9:30 PM Eastern on weekdays. Full courses have waitlists that fill automatically.',
+    'B-Term courses get their own Add/Drop window later in the semester; Block Week courses close earlier. Check the Registration Calendar.',
+    'First-class attendance rules vary by professor, and exams are not rescheduled for travel, so check the exam schedule before you finalize.'
+  ];
+  function summaryHtml(listed, clashes, cores) {
+    const cr = cs => cs.reduce((n, c) => n + c.credits, 0);
+    const fmtCr = n => (Math.round(n * 10) / 10).toString();
+    const coreCr = cr(cores.map(k => k.c));
+    const room = CREDIT_CAP - coreCr;
+    const rulesHtml = `<details class="rules"><summary>Registration rules from the cheat sheet</summary><ul>${RULES.map(r => `<li>${esc(r)}</li>`).join('')}</ul></details>`;
+    const coreNote = cores.length ? '' : `<p>Set your core status in the Core group below: mark each spring core section you're pre-enrolled in, and the courses you've completed or exempted. That turns on the credit room, core clash and prerequisite checks.</p>`;
+    if (!listed.length) return `<div class="summary"><p>No electives on your list yet. Choose a tier in the "My tier" column of any elective in All courses.</p>${coreNote}${rulesHtml}</div>`;
+    const cells = TIERS.map(t => { const cs = listed.filter(c => tierOf(c.id) === t); return `<div><small>${t}</small><b>${cs.length}</b> <span>· ${fmtCr(cr(cs))} cr</span></div>`; }).join('')
+      + `<div><small>Ranked</small><b>${listed.length}</b> <span>· ${fmtCr(cr(listed))} cr</span></div>`
+      + `<div><small>Room</small><b>${fmtCr(room)}</b> <span>cr of ${CREDIT_CAP}${coreCr ? ' after ' + fmtCr(coreCr) + ' core' : ''}</span></div>`;
+    const below = listed.filter(c => c.cm && TIER_RANK[tierOf(c.id)] < Math.min(NEED_RANK[c.cm.need], 3));
+    const riskyFav = listed.filter(c => c.cm && tierOf(c.id) === 'Favorite' && NEED_RANK[c.cm.need] >= 4);
+    const spare = listed.filter(c => c.cm && tierOf(c.id) === 'Favorite' && NEED_RANK[c.cm.need] <= 2);
+    const pairs = new Set();
+    clashes.forEach((os, id) => os.forEach(o => pairs.add([id, o.id].sort().join(' and '))));
+    const noData = listed.filter(c => !c.cm);
+    const coreBlocked = cores.length ? listed.filter(c => !usableSecs(c, cores).length) : [];
+    const reqGaps = listed.filter(c => reqNotes(c).length);
+    const favCr = cr(listed.filter(c => tierOf(c.id) === 'Favorite'));
+    const items = [];
+    if (coreBlocked.length) items.push(`${coreBlocked.length} course${coreBlocked.length > 1 ? 's clash' : ' clashes'} with your core in every section, so Course Match can't place you: ${coreBlocked.map(c => c.id).join(', ')}`);
+    if (favCr > room) items.push(`Your Favorites add up to ${fmtCr(favCr)} credits, more than your ${fmtCr(room)} credits of room, so some of them can't be allocated`);
+    if (cr(listed) < 2 * room) items.push(`You've ranked ${fmtCr(cr(listed))} credits for ${fmtCr(room)} credits of room. The registrar advises ranking widely; ranking a course isn't a commitment to take it`);
+    if (reqGaps.length) items.push(`${reqGaps.length} course${reqGaps.length > 1 ? 's have' : ' has'} a prerequisite or corequisite gap: ${reqGaps.map(c => c.id).join(', ')}`);
+    if (below.length) items.push(`${below.length} course${below.length > 1 ? 's are ranked below the tier they need' : ' is ranked below the tier it needs'}: ${below.map(c => c.id).join(', ')}`);
+    if (riskyFav.length) items.push(`${riskyFav.length} Favorite${riskyFav.length > 1 ? 's are' : ' is'} still a gamble: ${riskyFav.map(c => c.id).join(', ')}`);
+    if (spare.length) items.push(`${spare.length} Favorite${spare.length > 1 ? 's go' : ' goes'} to courses that cleared at Great or lower: ${spare.map(c => c.id).join(', ')}`);
+    if (pairs.size) items.push(`${pairs.size} pair${pairs.size > 1 ? 's' : ''} always clash: ${[...pairs].join('; ')}`);
+    if (noData.length) items.push(`${noData.length} course${noData.length > 1 ? 's have' : ' has'} no Spring 2026 data: ${noData.map(c => c.id).join(', ')}`);
+    const list = items.length ? items.map(i => `<li>${esc(i)}</li>`).join('') : '<li class="ok">No tier or timing problems found.</li>';
+    return `<div class="summary"><div class="sum-tiers">${cells}</div><ul class="issues">${list}</ul>
+      ${coreNote}<p>The cheat sheet doesn't say whether the number of Favorites or Greats is limited, so no tier cap is applied. Clashes use each section's main weekly meeting, not one-off kickoff sessions.</p>${rulesHtml}</div>`;
+  }
+
+  function render() {
+    const ae = document.activeElement;
+    const focusId = ae && ae.classList && ae.classList.contains('tiersel') ? ae.dataset.id : null;
+    const listedIds = [...picks.keys()].filter(id => byId.has(id) && !isCore(byId.get(id)));
+    const cores = curCores = coreSlots();
+    const clashes = clashMap(listedIds, cores);
+    ui.count.textContent = listedIds.length;
+    const roundCr = cs => Math.round(cs.reduce((n, c) => n + c.credits, 0) * 10) / 10;
+    if (view === 'list') {
+      const listed = listedIds.map(id => byId.get(id)).sort((a, b) => a.id.localeCompare(b.id));
+      ui.summary.innerHTML = summaryHtml(listed, clashes, cores);
+      const coreCourses = DATA.filter(isCore);
+      const pre = coreCourses.filter(c => tierOf(c.id) === 'Pre-enrolled');
+      const done = coreCourses.filter(c => tierOf(c.id) === 'Completed');
+      const coreHead = `<div class="tier-h"><b>Core</b><span>${pre.length} pre-enrolled this spring · ${roundCr(pre)} credits · ${done.length} completed or exempt</span></div>`;
+      ui.list.innerHTML = coreHead + coreCourses.map(c => rowHtml(c, null, cores)).join('') + TIERS.map(t => {
+        const cs = listed.filter(c => tierOf(c.id) === t);
+        return `<div class="tier-h"><b>${t}</b><span>${cs.length} course${cs.length === 1 ? '' : 's'} · ${roundCr(cs)} credits</span></div>`
+          + (cs.length ? cs.map(c => rowHtml(c, clashes.get(c.id), cores)).join('') : '<div class="tier-empty">None yet.</div>');
+      }).join('');
+      ui.shown.innerHTML = `<b>${listed.length}</b> elective${listed.length === 1 ? '' : 's'} on your list · filters don't apply here`;
+    } else {
+      const base = DATA.filter(c => state.type === 'All' || c.type === state.type);
+      const rows = DATA.filter(courseMatches).sort(sorters[state.sort]);
+      ui.list.innerHTML = rows.length ? rows.map(c => rowHtml(c, clashes.get(c.id), cores)).join('') : '<div class="empty">No courses match these filters. Clear a filter or two to see more.</div>';
+      const label = state.type === 'Elective' ? 'electives' : state.type === 'Core' ? 'core courses' : 'courses';
+      ui.shown.innerHTML = `Showing <b>${rows.length}</b> of ${base.length} ${label} · <b>${rows.reduce((n, c) => n + c.sections.length, 0)}</b> sections`;
+    }
+    if (focusId) { const el = ui.list.querySelector(`.tiersel[data-id="${focusId}"]`); if (el) el.focus(); }
+    const n = state.part.size + state.day.size + state.tod.size + state.cr.size + state.need.size + state.flag.size + (state.q ? 1 : 0) + (state.div ? 1 : 0) + (state.path ? 1 : 0);
+    ui.active.textContent = n ? `${n} active` : '';
+  }
+  ui.list.addEventListener('click', e => {
+    const btn = e.target.closest('.row-btn'); if (!btn) return;
+    const art = btn.closest('.course'), id = art.dataset.id;
+    const c = DATA.find(x => x.id === id);
+    if (open.has(id)) { open.delete(id); art.classList.remove('open'); btn.setAttribute('aria-expanded', 'false'); art.querySelector('.detail')?.remove(); }
+    else { open.add(id); art.classList.add('open'); btn.setAttribute('aria-expanded', 'true'); art.insertAdjacentHTML('beforeend', detailHtml(c)); }
+  });
+
+  // Masthead stats
+  const el = DATA.filter(c => c.type === 'Elective');
+  document.getElementById('stats').innerHTML = [
+    [el.length, 'electives'], [DATA.length - el.length, 'core courses'], [DATA.reduce((n, c) => n + c.sections.length, 0), 'sections'],
+    [el.filter(c => c.newCourse).length, 'new electives'], [el.filter(c => c.profChange).length, 'electives with a new professor'],
+    [el.filter(c => c.sections.some(isApp)).length, 'application-only'],
+    [el.filter(c => c.cm && c.cm.filled).length, 'filled last spring'],
+    [el.filter(c => c.cm && NEEDS.indexOf(c.cm.need) >= 3).length, 'need Favorite to be safe']
+  ].map(([n, l]) => `<span><b>${n}</b> ${l}</span>`).join('');
+
+  // ---- View tabs
+  function setView(v) {
+    view = v;
+    document.getElementById('tab-all').setAttribute('aria-selected', v === 'all');
+    document.getElementById('tab-list').setAttribute('aria-selected', v === 'list');
+    ui.layout.classList.toggle('listmode', v === 'list');
+    ui.rail.hidden = v === 'list';
+    ui.summary.hidden = v !== 'list';
+    ui.sortwrap.hidden = v === 'list';
+    render();
+  }
+  document.getElementById('tab-all').addEventListener('click', () => setView('all'));
+  document.getElementById('tab-list').addEventListener('click', () => setView('list'));
+
+  // ---- Saving picks
+  function setSync(text, err) { ui.sync.textContent = text; ui.sync.classList.toggle('err', !!err); }
+  function loadLocal() {
+    try {
+      const raw = localStorage.getItem(LOCAL_KEY);
+      if (raw) picks = new Map(Object.entries(JSON.parse(raw))
+        .map(([id, v]) => [id, typeof v === 'string' ? { tier: v } : v])
+        .filter(([id, p]) => validPick(byId.get(id), p)));
+    } catch (e) { /* storage blocked: start empty */ }
+  }
+  function saveLocal() {
+    try { localStorage.setItem(LOCAL_KEY, JSON.stringify(Object.fromEntries(picks))); }
+    catch (e) { setSync("Couldn't save in this browser.", true); }
+  }
+  function savePick(id, val) {
+    const c = byId.get(id);
+    if (!c || !store.canWrite) return;
+    const prev = picks.get(id) || null;
+    if ((prev && prev.tier) === (val && val.tier) && (prev && prev.section) === (val && val.section)) return;
+    if (val) picks.set(id, val); else picks.delete(id);
+    render();
+    if (store.mode === 'local') { saveLocal(); return; }
+    if (store.mode !== 'remote') return;
+    setSync('Saving…');
+    const ref = store.db.collection('shortlist').doc(id);
+    const body = val && Object.assign({ tier: val.tier, title: c.title, type: c.type, credits: c.credits, getItAt: c.cm ? c.cm.need : null, updatedAt: new Date().toISOString() },
+      val.section ? { section: val.section } : {});
+    const write = () => val ? ref.set(body) : ref.delete();
+    const p = (store.chains.get(id) || Promise.resolve()).catch(() => {}).then(write).then(
+      () => { if (store.chains.get(id) === p) setSync('Saved to your account'); },
+      e => {
+        if (prev) picks.set(id, prev); else picks.delete(id);
+        if (e && e.code === 'invalid_argument') { store.canWrite = false; setSync('View only: you can see this list but not change it.', true); }
+        else setSync("Couldn't save that change. Try again.", true);
+        render();
+      });
+    store.chains.set(id, p);
+  }
+  ui.list.addEventListener('change', e => {
+    const s = e.target.closest('.tiersel');
+    if (!s) return;
+    const c = byId.get(s.dataset.id), v = s.value;
+    savePick(s.dataset.id, !v ? null : !isCore(c) ? { tier: v } : v === 'C' ? { tier: 'Completed' } : { tier: 'Pre-enrolled', section: v.slice(2) });
+  });
+
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    const body = JSON.stringify({ exported: new Date().toISOString(), picks: Object.fromEntries(picks) }, null, 2);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([body], { type: 'application/json' }));
+    a.download = 'my-spring-2027-course-list.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    setSync('Exported your list');
+  });
+  const importFile = document.getElementById('importFile');
+  document.getElementById('importBtn').addEventListener('click', () => importFile.click());
+  importFile.addEventListener('change', async () => {
+    const f = importFile.files && importFile.files[0];
+    importFile.value = '';
+    if (!f) return;
+    try {
+      const obj = JSON.parse(await f.text());
+      const next = new Map(Object.entries(obj.picks || obj)
+        .map(([id, v]) => [id, typeof v === 'string' ? { tier: v } : v])
+        .filter(([id, p]) => validPick(byId.get(id), p)));
+      picks = next; saveLocal(); render();
+      setSync(`Imported ${next.size} course${next.size === 1 ? '' : 's'}`);
+    } catch (e) { setSync("That file isn't a course list exported from this page.", true); }
+  });
+
+  async function connect() {
+    let db = null;
+    try { db = window.claude && typeof window.claude.use === 'function' ? await window.claude.use('db') : null; } catch (e) { db = null; }
+    if (!db) {
+      store.mode = 'local'; loadLocal(); setSync('Saved in this browser only'); render();
+      // Outside Claude (the standalone site) the list lives in this browser, so offer a file to move it between devices
+      if (!window.claude) document.getElementById('io').hidden = false;
+      return;
+    }
+    store.db = db; store.mode = 'remote';
+    try {
+      const user = await window.claude.use('user');
+      if (user && (await user.canEdit()) === false) store.canWrite = false;
+    } catch (e) { /* not told: keep inputs and let a refused write decide */ }
+    setSync(store.canWrite ? 'Loading your list…' : 'View only');
+    let loaded = false;
+    const timer = setTimeout(() => { if (!loaded) setSync("Your list can't be reached yet. It will appear once it connects.", true); }, 10000);
+    db.collection('shortlist').onSnapshot(snap => {
+      if (!loaded && !snap.metadata.fromCache) { loaded = true; clearTimeout(timer); setSync(store.canWrite ? 'Saved to your account' : 'View only'); }
+      const next = new Map();
+      snap.docs.forEach(d => {
+        const b = d.exists ? (d.data() || {}) : {};
+        const p = b.section ? { tier: b.tier, section: String(b.section) } : { tier: b.tier };
+        if (validPick(byId.get(d.id), p)) next.set(d.id, p);
+      });
+      picks = next;
+      render();
+    }, () => {
+      clearTimeout(timer); loaded = true; store.mode = 'error'; store.canWrite = false;
+      setSync("Your list couldn't be loaded right now.", true);
+      render();
+    });
+  }
+
+  if (window.matchMedia('(min-width: 980px)').matches) ui.rail.open = true;
+  render();
+  connect();
+})();
+</script>
