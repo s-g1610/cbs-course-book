@@ -183,6 +183,7 @@ h1 { font-family: var(--font-display); font-weight: 600; font-size: clamp(30px, 
 .linkbox { width: 100%; margin: -4px 0 12px; padding: 7px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--ink); font-family: var(--font-mono); font-size: 12px; }
 .restore { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0 0 12px; padding: 10px 14px; border: 1px solid var(--h25); border-radius: var(--radius); background: var(--warn-soft); font-size: 13px; }
 .restore[hidden] { display: none; }
+.restore.offer { border-color: var(--accent); background: var(--accent-soft); }
 .io { display: inline-flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
 .iobtn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: var(--radius); padding: 5px 10px; font-size: 12.5px; cursor: pointer; }
 .iobtn:hover { border-color: var(--faint); }
@@ -369,6 +370,11 @@ td.nw { white-space: nowrap; }
       <div class="restore" id="restore" hidden>
         <span id="restoreText"></span>
         <button type="button" class="savebtn" id="restoreBtn">Restore them</button>
+      </div>
+      <div class="restore offer" id="linkOffer" hidden>
+        <span id="linkOfferText"></span>
+        <button type="button" class="savebtn" id="useLinkBtn">Load these choices</button>
+        <button type="button" class="iobtn" id="keepMineBtn">Keep my own list</button>
       </div>
       <div id="summary" hidden></div>
       <div class="listbar">
@@ -977,13 +983,42 @@ td.nw { white-space: nowrap; }
     if (window.claude) return;
     try { history.replaceState(null, '', location.pathname + location.search + '#list=' + encodeList() + '&saved=' + Date.now()); } catch (e) { /* address bar not writable */ }
   }
+  // A save link may be someone else's, so its choices never replace this browser's list without asking
+  let pendingLink = null;
+  const samePicks = (a, b) => a.size === b.size && [...a].every(([id, p]) => {
+    const q = b.get(id);
+    return q && q.tier === p.tier && (q.section || '') === (p.section || '');
+  });
   function loadLocal() {
     const a = readLocal(), b = window.claude ? null : readHash();
-    const best = [a, b].filter(x => x && x.picks.size).sort((x, y) => y.savedAt - x.savedAt)[0];
-    if (best) picks = best.picks;
-    if (best && best === b) saveLocal();
-    return best ? (best === b ? 'your save link' : 'this browser') : '';
+    if (a && a.picks.size) picks = a.picks;
+    if (b && b.picks.size && !samePicks(b.picks, picks)) pendingLink = b;
+    return a && a.picks.size ? 'this browser' : '';
   }
+  function clearHash() {
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* address bar not writable */ }
+  }
+  function showLinkOffer() {
+    const el = document.getElementById('linkOffer'), b = pendingLink;
+    el.hidden = !b;
+    if (!b) return;
+    const when = b.savedAt ? ', saved ' + new Date(b.savedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+    document.getElementById('linkOfferText').textContent = `This link carries ${countLabel(b.picks.size)}${when}. `
+      + (picks.size ? `Loading them replaces the ${countLabel(picks.size)} saved in this browser.` : "Load them if it's your own save link; if a friend sent it, start your own list.");
+    document.getElementById('keepMineBtn').textContent = picks.size ? 'Keep my own list' : 'Start my own list';
+  }
+  document.getElementById('useLinkBtn').addEventListener('click', () => {
+    if (!pendingLink) return;
+    picks = pendingLink.picks; pendingLink = null;
+    saveLocal(); writeHash(); showLinkOffer(); render();
+    setSync(`Loaded ${countLabel(picks.size)} from the link`);
+  });
+  document.getElementById('keepMineBtn').addEventListener('click', () => {
+    pendingLink = null;
+    if (picks.size) writeHash(); else clearHash();
+    showLinkOffer();
+    setSync(picks.size ? `Kept your ${countLabel(picks.size)}` : 'Starting a fresh list. Pick a tier in the My tier column.');
+  });
   function bodyFor(c, val) {
     return Object.assign({ tier: val.tier, title: c.title, type: c.type, credits: c.credits, getItAt: c.cm ? c.cm.need : null, updatedAt: new Date().toISOString() },
       val.section ? { section: val.section } : {});
@@ -1114,7 +1149,8 @@ td.nw { white-space: nowrap; }
       } else {
         // The standalone site keeps the list in this browser and in the page address; offer a link and a file to move it
         document.getElementById('io').hidden = false;
-        if (picks.size) writeHash();
+        if (picks.size && !pendingLink) writeHash();
+        showLinkOffer();
         setSync(picks.size ? `${countLabel(picks.size)} restored from ${from}` : 'Choices are kept in this browser. Press Save my choices to get a link that works anywhere.');
       }
       return;
